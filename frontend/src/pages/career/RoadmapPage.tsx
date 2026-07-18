@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { CheckCircle, Clock, Search, Sparkles, X } from "lucide-react";
-import { Card, Badge, Button } from "../components/UI";
-import { roles } from "../data/roles";
-import { useAuth } from "../hooks/useAuth";
-import { firestoreService } from "../services/firestoreService";
+import { Card, Badge, Button } from "../../components/ui/UI";
+import { roles } from "../../data/roles";
+import { useAuth } from "../../hooks/useAuth";
+import { firestoreService } from "../../services/firestoreService";
 
 type ExperienceLevel = "Beginner" | "Intermediate" | "Experienced";
 

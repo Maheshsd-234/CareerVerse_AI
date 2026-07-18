@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Award, BookOpen, GraduationCap, MapPin, Sparkles, TrendingUp, X } from "lucide-react";
-import { Card, Badge, Button } from "../components/UI";
-import { careerPaths } from "../data/careerPaths";
+import { Card, Badge, Button } from "../../components/ui/UI";
+import { careerPaths } from "../../data/careerPaths";
 
 export const CareerNavigatorPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState("After 10th");

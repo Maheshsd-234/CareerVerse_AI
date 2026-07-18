@@ -1,20 +1,20 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
-import { Navbar } from "./components/Navbar";
-import { Sidebar } from "./components/Sidebar";
+import { Navbar } from "./components/layout/Navbar";
+import { Sidebar } from "./components/layout/Sidebar";
 
 // Pages
-import { LoginPage } from "./pages/LoginPage";
-import { RegisterPage } from "./pages/RegisterPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { CareerNavigatorPage } from "./pages/CareerNavigatorPage";
-import { RoleExplorerPage } from "./pages/RoleExplorerPage";
-import { SkillGapPage } from "./pages/SkillGapPage";
-import { RoadmapPage } from "./pages/RoadmapPage";
-import { AssessmentPage } from "./pages/AssessmentPage";
-import { ChatbotPage } from "./pages/ChatbotPage";
-import { TrendingPage } from "./pages/TrendingPage";
+import { LoginPage } from "./pages/auth/LoginPage";
+import { RegisterPage } from "./pages/auth/RegisterPage";
+import { DashboardPage } from "./pages/assistant/DashboardPage";
+import { CareerNavigatorPage } from "./pages/career/CareerNavigatorPage";
+import { RoleExplorerPage } from "./pages/career/RoleExplorerPage";
+import { SkillGapPage } from "./pages/career/SkillGapPage";
+import { RoadmapPage } from "./pages/career/RoadmapPage";
+import { AssessmentPage } from "./pages/career/AssessmentPage";
+import { ChatbotPage } from "./pages/assistant/ChatbotPage";
+import { TrendingPage } from "./pages/career/TrendingPage";
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();

@@ -8,10 +8,10 @@ import {
   ArrowRight,
   Loader,
 } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
-import { Card, Badge, Button, ProgressBar } from "../components/UI";
-import { roles, trendingRoles } from "../data/roles";
-import { LoadingCard } from "../components/Loading";
+import { useAuth } from "../../hooks/useAuth";
+import { Card, Badge, Button, ProgressBar } from "../../components/ui/UI";
+import { roles, trendingRoles } from "../../data/roles";
+import { LoadingCard } from "../../components/ui/Loading";
 
 export const DashboardPage: React.FC = () => {
   const { appUser, user } = useAuth();

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
-import { Button, Card } from "../components/UI";
-import { LoadingSpinner } from "../components/Loading";
+import { useAuth } from "../../hooks/useAuth";
+import { Button, Card } from "../../components/ui/UI";
+import { LoadingSpinner } from "../../components/ui/Loading";
 
 export const RegisterPage: React.FC = () => {
   const { register, loading } = useAuth();

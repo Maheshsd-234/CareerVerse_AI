@@ -11,8 +11,8 @@ import {
   Filter,
 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import { Card, Badge, Button, ProgressBar } from "../components/UI";
-import { roles } from "../data/roles";
+import { Card, Badge, Button, ProgressBar } from "../../components/ui/UI";
+import { roles } from "../../data/roles";
 
 type ExperienceLevel = "beginner" | "intermediate" | "experienced";
 

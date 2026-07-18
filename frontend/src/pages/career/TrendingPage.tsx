@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { TrendingUp, Zap } from "lucide-react";
-import { Card, Badge, Button } from "../components/UI";
-import { roles, trendingRoles } from "../data/roles";
-import { geminiService } from "../services/geminiService";
+import { Card, Badge, Button } from "../../components/ui/UI";
+import { roles, trendingRoles } from "../../data/roles";
+import { geminiService } from "../../services/geminiService";
 
 export const TrendingPage: React.FC = () => {
   const [aiTrending, setAiTrending] = useState<Array<{ id: string; reason: string }> | null>(null);

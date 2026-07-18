@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { CheckCircle, Clock, Trophy } from "lucide-react";
-import { Card, Badge, Button, ProgressBar } from "../components/UI";
-import { useAuth } from "../hooks/useAuth";
-import { firestoreService } from "../services/firestoreService";
-import { roles } from "../data/roles";
-import { geminiService } from "../services/geminiService";
+import { Card, Badge, Button, ProgressBar } from "../../components/ui/UI";
+import { useAuth } from "../../hooks/useAuth";
+import { firestoreService } from "../../services/firestoreService";
+import { roles } from "../../data/roles";
+import { geminiService } from "../../services/geminiService";
 
 interface Question {
   id: number;

@@ -1,0 +1,10 @@
+{
+  "name": "careerverse-backend",
+  "version": "1.0.0",
+  "description": "Starter backend for CareerVerse",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "private": true
+}

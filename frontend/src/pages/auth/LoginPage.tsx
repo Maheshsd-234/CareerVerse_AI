@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase/config";
-import { Button, Card } from "../components/UI";
-import { LoadingSpinner } from "../components/Loading";
+import { auth } from "../../firebase/config";
+import { Button, Card } from "../../components/ui/UI";
+import { LoadingSpinner } from "../../components/ui/Loading";
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();

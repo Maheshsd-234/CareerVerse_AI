@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { History, MessageSquarePlus, Send } from "lucide-react";
-import { formatGeminiError, geminiService } from "../services/geminiService";
-import { firestoreService } from "../services/firestoreService";
-import { useAuth } from "../hooks/useAuth";
-import { TypingAnimation } from "./Loading";
-import type { ChatMessage, ChatSession } from "../types";
+import { formatGeminiError, geminiService } from "../../services/geminiService";
+import { firestoreService } from "../../services/firestoreService";
+import { useAuth } from "../../hooks/useAuth";
+import { TypingAnimation } from "../ui/Loading";
+import type { ChatMessage, ChatSession } from "../../types";
 
 const newMessageId = () => crypto.randomUUID();
 const pendingArchiveKey = (uid: string) => `careerverse_pending_chat_${uid}`;

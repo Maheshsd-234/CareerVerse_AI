@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Plus, Route, Sparkles, X } from "lucide-react";
-import { Card, Badge, Button, ProgressBar } from "../components/UI";
-import { useAuth } from "../hooks/useAuth";
-import { skills } from "../data/skills";
-import { roles } from "../data/roles";
-import { firestoreService } from "../services/firestoreService";
-import { useSkillGap } from "../hooks/useSkillGap";
+import { Card, Badge, Button, ProgressBar } from "../../components/ui/UI";
+import { useAuth } from "../../hooks/useAuth";
+import { skills } from "../../data/skills";
+import { roles } from "../../data/roles";
+import { firestoreService } from "../../services/firestoreService";
+import { useSkillGap } from "../../hooks/useSkillGap";
 
 type ExperienceLevel = "Beginner" | "Intermediate" | "Experienced";
 

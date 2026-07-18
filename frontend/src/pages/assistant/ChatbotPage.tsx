@@ -1,6 +1,5 @@
 import React from "react";
-import { Navbar } from "../components/Navbar";
-import { ChatBot } from "../components/ChatBot";
+import { ChatBot } from "../../components/chatbot/ChatBot";
 
 export const ChatbotPage: React.FC = () => {
   return (
