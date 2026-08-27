@@ -8,7 +8,13 @@ interface AuthContextType {
   appUser: AppUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    displayName: string,
+    currentStage?: string
+  ) => Promise<void>;
+  updateUserStage: (stage: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -48,7 +54,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      await authService.login(email, password);
+      const fbUser = await authService.login(email, password);
+      if (fbUser) {
+        const profile = await authService.getUserProfile(fbUser.uid);
+        setAppUser(profile);
+      }
     } finally {
       setLoading(false);
     }
@@ -57,13 +67,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (
     email: string,
     password: string,
-    displayName: string
+    displayName: string,
+    currentStage?: string
   ) => {
     setLoading(true);
     try {
-      await authService.register(email, password, displayName);
+      const fbUser = await authService.register(email, password, displayName, currentStage);
+      if (fbUser) {
+        if (currentStage) {
+          localStorage.setItem(`cv_user_stage_${fbUser.uid}`, currentStage);
+        }
+        const profile = await authService.getUserProfile(fbUser.uid);
+        if (profile) {
+          setAppUser(profile);
+        } else {
+          setAppUser({
+            uid: fbUser.uid,
+            email: fbUser.email || "",
+            displayName: displayName || fbUser.displayName || "Student",
+            currentStage: currentStage || "school",
+            createdAt: new Date(),
+            skills: [],
+            selectedCareer: null,
+            assessmentScore: null,
+          });
+        }
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateUserStage = async (stage: string) => {
+    if (!user) return;
+    localStorage.setItem(`cv_user_stage_${user.uid}`, stage);
+    setAppUser((prev) => (prev ? { ...prev, currentStage: stage } : null));
+    try {
+      await authService.ensureUserProfile(user, appUser?.displayName, stage);
+    } catch (e) {
+      console.warn("Failed to persist stage:", e);
     }
   };
 
@@ -77,7 +119,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, appUser, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        appUser,
+        loading,
+        login,
+        register,
+        updateUserStage,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -90,4 +142,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

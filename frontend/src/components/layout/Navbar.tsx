@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronDown, Crown, LogOut, Menu, Sparkles, X } from "lucide-react";
+import { ChevronDown, Crown, LogOut, Menu, Sparkles, X, MapPin } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
-import { useState } from "react";
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, appUser, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -17,7 +16,7 @@ export const Navbar: React.FC = () => {
   };
 
   const initials = useMemo(() => {
-    const name = user?.displayName?.trim();
+    const name = appUser?.displayName || user?.displayName?.trim();
     if (name) {
       const parts = name.split(/\s+/).filter(Boolean);
       const first = parts[0]?.[0] ?? "";
@@ -26,7 +25,7 @@ export const Navbar: React.FC = () => {
     }
     const email = user?.email ?? "";
     return (email[0] ?? "U").toUpperCase();
-  }, [user?.displayName, user?.email]);
+  }, [appUser?.displayName, user?.displayName, user?.email]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -40,81 +39,99 @@ export const Navbar: React.FC = () => {
   }, []);
 
   return (
-    <nav className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg relative z-50">
-      <div className="w-full px-2 sm:px-4 md:px-6">
+    <nav className="bg-[#12122B] text-white border-b border-white/10 relative z-50">
+      <div className="w-full px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur flex items-center justify-center shadow-sm">
-              <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
-                <span className="font-extrabold text-indigo-700 tracking-tight">CV</span>
-              </div>
+          {/* Logo with Wayfinding Route Tag */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-[#4F46E5] flex items-center justify-center shadow-sm shadow-[#4F46E5]/40 transition group-hover:scale-105">
+              <span className="font-display font-extrabold text-white tracking-tighter text-sm">
+                CV
+              </span>
             </div>
-            <span className="font-bold text-xl hidden sm:inline">CareerVerse</span>
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-lg text-white leading-tight tracking-tight flex items-center gap-1.5">
+                CareerVerse <span className="text-[#F5A623] text-xs font-data font-bold">AI</span>
+              </span>
+              <span className="text-[10px] font-data font-medium text-gray-400 tracking-wider uppercase hidden sm:inline">
+                Wayfinding Platform
+              </span>
+            </div>
           </Link>
 
+          {/* Desktop Right Nav & Profile */}
           {user && (
-            <div className="hidden md:flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-4">
+              {/* Route Indicator pill */}
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-data">
+                <span className="w-2 h-2 rounded-full bg-[#14B8A6] animate-pulse" />
+                <span className="text-gray-300">Live Route</span>
+                <span className="text-white/40">|</span>
+                <span className="text-[#F5A623] font-semibold">
+                  {appUser?.selectedCareer || "Exploring"}
+                </span>
+              </div>
+
               <div ref={profileRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setProfileOpen((v) => !v)}
-                  className="flex items-center gap-2 px-2.5 py-2 rounded-xl hover:bg-white/10 transition"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-white/10 transition border border-white/10"
                 >
-                  <div className="flex flex-col items-center leading-none">
-                    <div className="w-9 h-9 rounded-full bg-white/20 ring-1 ring-white/25 flex items-center justify-center font-bold">
-                      {initials}
-                    </div>
-                    <div className="mt-1 text-[11px] font-semibold opacity-95">
-                      Profile
-                    </div>
+                  <div className="w-8 h-8 rounded-lg bg-[#4F46E5] flex items-center justify-center font-display font-bold text-xs text-white">
+                    {initials}
                   </div>
+                  <span className="text-xs font-display font-medium text-gray-200 max-w-[120px] truncate">
+                    {appUser?.displayName || user.displayName || user.email?.split("@")[0]}
+                  </span>
                   <ChevronDown
-                    size={18}
-                    className={`opacity-90 transition ${profileOpen ? "rotate-180" : ""}`}
+                    size={16}
+                    className={`text-gray-400 transition-transform duration-200 ${
+                      profileOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white text-gray-900 shadow-2xl ring-1 ring-black/5 overflow-hidden animate-slide-in z-50">
-                    <div className="p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+                  <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-white text-[#12122B] shadow-2xl ring-1 ring-black/10 overflow-hidden z-50">
+                    <div className="p-4 bg-[#12122B] text-white border-b border-white/10">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-white/20 ring-1 ring-white/30 flex items-center justify-center font-bold text-lg">
+                        <div className="w-10 h-10 rounded-xl bg-[#4F46E5] flex items-center justify-center font-display font-bold text-white text-base">
                           {initials}
                         </div>
-                        <div className="leading-tight">
-                          <div className="text-sm font-semibold">
-                            {user.displayName || "Your Account"}
+                        <div className="leading-tight overflow-hidden">
+                          <div className="text-sm font-display font-bold text-white truncate">
+                            {appUser?.displayName || user.displayName || "Student Pilot"}
                           </div>
-                          <div className="text-xs opacity-90">{user.email}</div>
+                          <div className="text-xs font-data text-gray-400 truncate">{user.email}</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-2">
-                          <Crown size={18} className="text-yellow-300" />
-                          <span className="font-semibold">Premium</span>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                        <div className="flex items-center gap-1.5 text-xs font-data text-[#F5A623]">
+                          <MapPin size={14} />
+                          <span>Track: {appUser?.selectedCareer || "General Route"}</span>
                         </div>
-                        <Sparkles size={18} className="opacity-90" />
+                        <span className="text-[10px] font-data px-2 py-0.5 rounded bg-[#14B8A6]/20 text-[#14B8A6] font-bold">
+                          ACTIVE
+                        </span>
                       </div>
-                      <p className="text-xs opacity-90 mt-2">
-                        Unlock personalized roadmaps, deeper skill insights, and smart role matching.
-                      </p>
                     </div>
 
-                    <div className="p-3">
+                    <div className="p-2">
                       <button
                         type="button"
                         onClick={() => {
                           setProfileOpen(false);
                           void handleLogout();
                         }}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-xl hover:bg-gray-50 transition"
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-100 transition text-sm font-display font-semibold text-red-600"
                       >
-                        <span className="flex items-center gap-2 font-medium">
-                          <LogOut size={18} className="text-gray-700" />
-                          Logout
+                        <span className="flex items-center gap-2">
+                          <LogOut size={16} />
+                          Sign Out
                         </span>
-                        <span className="text-xs text-gray-500">Sign out</span>
+                        <span className="text-xs font-data text-gray-400">Exit Session</span>
                       </button>
                     </div>
                   </div>
@@ -123,43 +140,34 @@ export const Navbar: React.FC = () => {
             </div>
           )}
 
+          {/* Mobile Menu Toggle */}
           {user && (
             <button
-              className="md:hidden"
+              className="md:hidden p-2 rounded-lg bg-white/10 text-white"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           )}
         </div>
 
+        {/* Mobile Dropdown */}
         {user && mobileMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-white/20">
-            <div className="py-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white/20 ring-1 ring-white/30 flex items-center justify-center font-bold">
-                  {initials}
-                </div>
-                <div className="leading-tight">
-                  <div className="text-sm font-semibold">{user.displayName || "Your Account"}</div>
-                  <div className="text-xs opacity-90">{user.email}</div>
-                </div>
+          <div className="md:hidden py-4 border-t border-white/10 space-y-3">
+            <div className="flex items-center gap-3 px-2">
+              <div className="w-9 h-9 rounded-lg bg-[#4F46E5] flex items-center justify-center font-bold text-white text-sm">
+                {initials}
               </div>
-              <div className="mt-3 rounded-xl bg-white/10 ring-1 ring-white/20 p-3">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <Crown size={18} className="text-yellow-300" />
-                  Premium
-                </div>
-                <p className="text-xs opacity-90 mt-1">
-                  Personalized roadmaps and deeper insights.
-                </p>
+              <div className="leading-tight">
+                <div className="text-sm font-bold text-white">{appUser?.displayName || user.displayName || "Account"}</div>
+                <div className="text-xs text-gray-400">{user.email}</div>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl transition w-full"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/20 text-red-300 border border-red-500/30 rounded-xl transition w-full text-sm font-semibold"
             >
-              <LogOut size={18} />
+              <LogOut size={16} />
               Logout
             </button>
           </div>

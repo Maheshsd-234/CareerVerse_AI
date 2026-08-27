@@ -1,33 +1,66 @@
 import React from "react";
 
-export const LoadingSpinner: React.FC = () => {
+interface LoadingSpinnerProps {
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  size = "md",
+  className = "",
+}) => {
+  const sizeClasses = {
+    sm: "w-5 h-5 border-2",
+    md: "w-8 h-8 border-[3px]",
+    lg: "w-12 h-12 border-4",
+  };
+
   return (
-    <div className="flex items-center justify-center">
-      <div className="relative w-12 h-12">
-        <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-        <div className="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
-      </div>
+    <div className={`relative flex items-center justify-center ${className}`}>
+      <div
+        className={`${sizeClasses[size]} rounded-full border-[#4F46E5]/20 border-t-[#4F46E5] animate-spin`}
+      />
     </div>
   );
 };
 
-export const LoadingCard: React.FC<{ message?: string }> = ({
-  message = "Fetching data...",
+export const LoadingCard: React.FC<{
+  message?: string;
+  subtext?: string;
+}> = ({
+  message = "Mapping your route...",
+  subtext = "Calibrating milestone coordinates & real-time career insights",
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center py-12">
-      <LoadingSpinner />
-      <p className="mt-4 text-gray-600 font-medium">{message}</p>
+    <div className="flex flex-col items-center justify-center py-16 px-4 text-center rounded-2xl bg-white/60 border border-dashed border-gray-300">
+      {/* Wayfinding Route Track Animation */}
+      <div className="relative flex items-center justify-center mb-4">
+        <div className="w-12 h-12 rounded-full bg-[#4F46E5]/10 flex items-center justify-center">
+          <LoadingSpinner size="md" />
+        </div>
+        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-[#F5A623] animate-ping" />
+      </div>
+
+      <p className="text-base font-display font-bold text-[#12122B] tracking-tight">
+        {message}
+      </p>
+      {subtext && (
+        <p className="mt-1 text-xs font-body text-[#6B7280] max-w-sm">
+          {subtext}
+        </p>
+      )}
     </div>
   );
 };
 
-export const TypingAnimation: React.FC = () => {
+export const TypingAnimation: React.FC<{ className?: string }> = ({
+  className = "",
+}) => {
   return (
-    <div className="flex gap-1">
-      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
-      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200" />
+    <div className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#4F46E5]/10 ${className}`}>
+      <span className="w-2 h-2 rounded-full bg-[#4F46E5] typing-dot-1" />
+      <span className="w-2 h-2 rounded-full bg-[#4F46E5] typing-dot-2" />
+      <span className="w-2 h-2 rounded-full bg-[#4F46E5] typing-dot-3" />
     </div>
   );
 };

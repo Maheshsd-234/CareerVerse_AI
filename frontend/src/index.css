@@ -1,147 +1,191 @@
 @import "tailwindcss";
 
-* {
-  @apply scroll-smooth;
+@theme {
+  --color-ink: #12122B;
+  --color-paper: #FAFAF7;
+  --color-signal: #4F46E5;
+  --color-milestone: #F5A623;
+  --color-growth: #14B8A6;
+  --color-ash: #6B7280;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-data: "IBM Plex Mono", monospace;
 }
 
+:root {
+  --color-ink: #12122B;
+  --color-paper: #FAFAF7;
+  --color-signal: #4F46E5;
+  --color-milestone: #F5A623;
+  --color-growth: #14B8A6;
+  --color-ash: #6B7280;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "IBM Plex Sans", sans-serif;
+  --font-data: "IBM Plex Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: var(--font-body);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+/* Typography utilities */
+.font-display {
+  font-family: var(--font-display);
 }
 
-/* Animation delays for staggered animation */
-.delay-100 {
-  animation-delay: 100ms;
+.font-body {
+  font-family: var(--font-body);
 }
 
-.delay-200 {
-  animation-delay: 200ms;
+.font-data {
+  font-family: var(--font-data);
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom color utility aliases for reliability across Tailwind v4 */
+.bg-ink { background-color: var(--color-ink); }
+.text-ink { color: var(--color-ink); }
+.border-ink { border-color: var(--color-ink); }
+
+.bg-paper { background-color: var(--color-paper); }
+.text-paper { color: var(--color-paper); }
+.border-paper { border-color: var(--color-paper); }
+
+.bg-signal { background-color: var(--color-signal); }
+.text-signal { color: var(--color-signal); }
+.border-signal { border-color: var(--color-signal); }
+
+.bg-milestone { background-color: var(--color-milestone); }
+.text-milestone { color: var(--color-milestone); }
+.border-milestone { border-color: var(--color-milestone); }
+
+.bg-growth { background-color: var(--color-growth); }
+.text-growth { color: var(--color-growth); }
+.border-growth { border-color: var(--color-growth); }
+
+.text-ash { color: var(--color-ash); }
+.border-ash { border-color: var(--color-ash); }
+
+/* Accessible keyboard focus rings */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-signal);
 }
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100;
+  background: #F1F1EC;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-400 rounded-lg hover:bg-gray-600;
+  background: #D1D5DB;
+  border-radius: 9999px;
 }
 
-/* Smooth transitions */
-button,
-a {
-  @apply transition-all duration-200;
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
 }
 
-/* Focus states */
-input:focus,
-select:focus,
-textarea:focus {
-  @apply outline-none ring-2 ring-indigo-600 ring-offset-2;
-}
-
-/* Card animations */
-.card-hover {
-  @apply hover:shadow-lg hover:-translate-y-1 transition;
-}
-
-/* Fade in animation */
-@keyframes fadeIn {
+/* Route Line SVG Animations */
+@keyframes drawRouteLineHorizontal {
   from {
-    opacity: 0;
+    stroke-dashoffset: 1200;
   }
   to {
-    opacity: 1;
+    stroke-dashoffset: 0;
   }
 }
 
-@keyframes slideIn {
+.route-line-path {
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  animation: drawRouteLineHorizontal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes drawRouteLineVertical {
   from {
-    transform: translateY(10px);
-    opacity: 0;
+    stroke-dashoffset: 1600;
   }
   to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.route-line-vertical-path {
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation: drawRouteLineVertical 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Active Station Milestone Pulse */
+@keyframes stationPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.65);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 9px rgba(245, 166, 35, 0);
+  }
+}
+
+.station-active-pulse {
+  animation: stationPulse 2.2s infinite ease-in-out;
+}
+
+/* Typing Dots Animation */
+@keyframes typingDot {
+  0%, 100% {
+    opacity: 0.3;
     transform: translateY(0);
+  }
+  50% {
     opacity: 1;
+    transform: translateY(-4px);
   }
 }
 
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
+.typing-dot-1 { animation: typingDot 1.2s infinite ease-in-out 0ms; }
+.typing-dot-2 { animation: typingDot 1.2s infinite ease-in-out 200ms; }
+.typing-dot-3 { animation: typingDot 1.2s infinite ease-in-out 400ms; }
 
-.animate-slide-in {
-  animation: slideIn 0.3s ease-in-out;
-}
-
-
-#root {
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0;
-  text-align: initial;
-}
-
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+/* Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .route-line-path,
+  .route-line-vertical-path {
+    stroke-dashoffset: 0 !important;
+    animation: none !important;
   }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+  .station-active-pulse {
+    animation: none !important;
   }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,258 +1,110 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { CheckCircle, Clock, Trophy } from "lucide-react";
+import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { Award, CheckCircle, Clock, Sparkles, Trophy, ArrowRight, RotateCcw, PenTool } from "lucide-react";
 import { Card, Badge, Button, ProgressBar } from "../../components/ui/UI";
+import { roles } from "../../data/roles";
 import { useAuth } from "../../hooks/useAuth";
 import { firestoreService } from "../../services/firestoreService";
-import { roles } from "../../data/roles";
-import { geminiService } from "../../services/geminiService";
+import { LoadingCard } from "../../components/ui/Loading";
 
 interface Question {
   id: number;
-  question: string;
   category: string;
-  answers: { text: string; points: { tech?: number; business?: number; creative?: number } }[];
+  question: string;
+  answers: Array<{
+    text: string;
+    points: { tech?: number; business?: number; creative?: number };
+  }>;
 }
-
-const mulberry32 = (seed: number) => {
-  return function () {
-    let t = (seed += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-};
-
-const shuffleWithSeed = <T,>(arr: T[], seed: string) => {
-  const numSeed = Array.from(seed).reduce((acc, c) => acc + c.charCodeAt(0), 0) || 1;
-  const rand = mulberry32(numSeed);
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-};
 
 const fallbackQuestions: Question[] = [
   {
     id: 1,
-    category: "Interest",
-    question: "Which activity do you enjoy the most?",
+    category: "Technical",
+    question: "When facing a complex problem, what is your first instinct?",
     answers: [
-      { text: "Building apps or automating tasks", points: { tech: 10 } },
-      { text: "Planning, managing, and leading teams", points: { business: 10 } },
-      { text: "Designing, writing, or creating content", points: { creative: 10 } },
-      { text: "Analyzing data to find insights", points: { tech: 7, business: 3 } },
+      { text: "Break it down into code or algorithmic steps", points: { tech: 10 } },
+      { text: "Analyze market data and resource trade-offs", points: { business: 10 } },
+      { text: "Sketch visual layouts and user flows", points: { creative: 10 } },
+      { text: "Discuss with peers to find a balanced solution", points: { business: 5, tech: 5 } },
     ],
   },
   {
     id: 2,
-    category: "Skills",
-    question: "Which skill describes you best right now?",
+    category: "Interest",
+    question: "Which of these projects excites you most to build?",
     answers: [
-      { text: "Logical problem-solving", points: { tech: 10 } },
-      { text: "Negotiation & communication", points: { business: 10 } },
-      { text: "Creative thinking", points: { creative: 10 } },
-      { text: "Organization & consistency", points: { business: 6, creative: 4 } },
+      { text: "An AI system that automates tasks", points: { tech: 10 } },
+      { text: "A startup pitch deck and financial strategy", points: { business: 10 } },
+      { text: "A consumer mobile app with stunning animations", points: { creative: 10 } },
+      { text: "A data analytics dashboard for enterprises", points: { tech: 6, business: 4 } },
     ],
   },
   {
     id: 3,
-    category: "Environment",
-    question: "Where would you prefer to work?",
+    category: "Tools",
+    question: "Which tool would you rather master in depth?",
     answers: [
-      { text: "Tech startup / product team", points: { tech: 10 } },
-      { text: "Corporate / management role", points: { business: 10 } },
-      { text: "Studio / media / creative team", points: { creative: 10 } },
-      { text: "Hybrid with flexibility", points: { tech: 6, business: 2, creative: 2 } },
+      { text: "Python, Docker, and Cloud Infrastructure", points: { tech: 10 } },
+      { text: "Excel models, Notion, and CRM systems", points: { business: 10 } },
+      { text: "Figma, Adobe Creative Suite, and Webflow", points: { creative: 10 } },
+      { text: "SQL, Tableau, and Analytics engines", points: { tech: 7, business: 3 } },
     ],
   },
   {
     id: 4,
-    category: "Impact",
-    question: "You want your work to mostly…",
+    category: "Environment",
+    question: "What type of daily work environment suits you best?",
     answers: [
-      { text: "Build products used by millions", points: { tech: 10 } },
-      { text: "Grow revenue / business outcomes", points: { business: 10 } },
-      { text: "Inspire or entertain people", points: { creative: 10 } },
-      { text: "Improve decisions with insights", points: { tech: 6, business: 4 } },
+      { text: "Deep architectural focus and debugging code", points: { tech: 10 } },
+      { text: "Negotiating with stakeholders and leading teams", points: { business: 10 } },
+      { text: "Iterating on brand visuals and user experiences", points: { creative: 10 } },
+      { text: "A flexible hybrid role with varied responsibilities", points: { business: 5, creative: 5 } },
     ],
   },
   {
     id: 5,
-    category: "RiskTolerance",
-    question: "How comfortable are you with risk?",
+    category: "Outcome",
+    question: "What outcome makes you feel most accomplished?",
     answers: [
-      { text: "I love experimenting and taking risks", points: { creative: 7, tech: 3 } },
-      { text: "I take calculated risks after analysis", points: { tech: 6, business: 4 } },
-      { text: "I prefer stable, predictable paths", points: { business: 8, creative: 2 } },
-      { text: "It depends on the opportunity", points: { business: 5, tech: 5 } },
-    ],
-  },
-  {
-    id: 6,
-    category: "AttentionToDetail",
-    question: "Which sounds most like you?",
-    answers: [
-      { text: "I like precision and correctness", points: { tech: 8, business: 2 } },
-      { text: "I focus on outcomes and strategy", points: { business: 10 } },
-      { text: "I focus on originality and aesthetics", points: { creative: 10 } },
-      { text: "I balance detail and speed", points: { tech: 5, business: 5 } },
-    ],
-  },
-  {
-    id: 7,
-    category: "Collaboration",
-    question: "In a team, you usually prefer to…",
-    answers: [
-      { text: "Own a technical problem end-to-end", points: { tech: 10 } },
-      { text: "Coordinate people and timelines", points: { business: 10 } },
-      { text: "Contribute ideas and creativity", points: { creative: 10 } },
-      { text: "Support and improve processes", points: { business: 6, tech: 4 } },
-    ],
-  },
-  {
-    id: 8,
-    category: "Patience",
-    question: "How do you feel about long learning journeys?",
-    answers: [
-      { text: "I enjoy deep learning and mastery", points: { tech: 8, creative: 2 } },
-      { text: "I prefer faster results and iteration", points: { business: 6, creative: 4 } },
-      { text: "I’m okay if the end goal is worth it", points: { tech: 5, business: 5 } },
-      { text: "I get bored quickly", points: { creative: 7, business: 3 } },
-    ],
-  },
-  {
-    id: 9,
-    category: "AmbiguityComfort",
-    question: "When requirements are unclear, you…",
-    answers: [
-      { text: "Experiment and learn by building", points: { tech: 8, creative: 2 } },
-      { text: "Clarify goals and plan steps", points: { business: 10 } },
-      { text: "Brainstorm multiple directions", points: { creative: 10 } },
-      { text: "Analyze options and choose a path", points: { tech: 6, business: 4 } },
-    ],
-  },
-  {
-    id: 10,
-    category: "LearningStyle",
-    question: "What’s the best way for you to learn?",
-    answers: [
-      { text: "Projects and hands-on practice", points: { tech: 10 } },
-      { text: "Case studies and structured plans", points: { business: 10 } },
-      { text: "Exploration and creative experiments", points: { creative: 10 } },
-      { text: "Mix of videos + practice + notes", points: { tech: 5, business: 3, creative: 2 } },
-    ],
-  },
-  // 5 more (accuracy boosters)
-  {
-    id: 11,
-    category: "Strength",
-    question: "What do people usually praise you for?",
-    answers: [
-      { text: "Solving difficult problems", points: { tech: 10 } },
-      { text: "Leading and decision-making", points: { business: 10 } },
-      { text: "Original ideas and creativity", points: { creative: 10 } },
-      { text: "Reliability and discipline", points: { business: 7, tech: 3 } },
-    ],
-  },
-  {
-    id: 12,
-    category: "WorkPreference",
-    question: "Which work style suits you?",
-    answers: [
-      { text: "Deep focus work", points: { tech: 8, creative: 2 } },
-      { text: "People-facing and coordination", points: { business: 10 } },
-      { text: "Creative collaboration", points: { creative: 10 } },
-      { text: "Balanced mix", points: { tech: 4, business: 4, creative: 2 } },
-    ],
-  },
-  {
-    id: 13,
-    category: "Motivation",
-    question: "What motivates you most?",
-    answers: [
-      { text: "Building something impressive", points: { tech: 10 } },
-      { text: "Growth, money, and impact", points: { business: 10 } },
-      { text: "Recognition for creativity", points: { creative: 10 } },
-      { text: "Helping people with solutions", points: { tech: 6, business: 4 } },
-    ],
-  },
-  {
-    id: 14,
-    category: "Future",
-    question: "In 5 years, you’d like to be…",
-    answers: [
-      { text: "A strong engineer/technical specialist", points: { tech: 10 } },
-      { text: "A manager or business owner", points: { business: 10 } },
-      { text: "A creator with a strong portfolio", points: { creative: 10 } },
-      { text: "An analyst driving decisions", points: { tech: 6, business: 4 } },
-    ],
-  },
-  {
-    id: 15,
-    category: "Challenge",
-    question: "What challenge do you enjoy more?",
-    answers: [
-      { text: "Debugging and optimizing systems", points: { tech: 10 } },
-      { text: "Solving business problems", points: { business: 10 } },
-      { text: "Creating something from scratch", points: { creative: 10 } },
-      { text: "Improving a process step-by-step", points: { business: 6, tech: 4 } },
+      { text: "Shipping a zero-bug, high-performance system", points: { tech: 10 } },
+      { text: "Hitting revenue targets and growing user metrics", points: { business: 10 } },
+      { text: "Seeing users delighted by an intuitive interface", points: { creative: 10 } },
+      { text: "Optimizing a sluggish workflow to run 5x faster", points: { tech: 6, business: 4 } },
     ],
   },
 ];
 
+const CountUpValue: React.FC<{ end: number; duration?: number }> = ({ end, duration = 800 }) => {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      setValue(Math.round(progress * end));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [end, duration]);
+
+  return <span className="font-data">{value}</span>;
+};
+
 export const AssessmentPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [scores, setScores] = useState({ tech: 0, business: 0, creative: 0 });
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [loadingQuestions, setLoadingQuestions] = useState(true);
-  const [questionSeed, setQuestionSeed] = useState<string>("");
-  const [questionBank, setQuestionBank] = useState<Question[]>([]);
-  const [runQuestions, setRunQuestions] = useState<Question[]>([]);
+  const [loadingQuestions] = useState(false);
+  const [questions] = useState<Question[]>(fallbackQuestions);
 
-  const generate = async () => {
-    const seed = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    setQuestionSeed(seed);
-    setCurrentQuestion(0);
-    setScores({ tech: 0, business: 0, creative: 0 });
-    setCompleted(false);
-
-    try {
-      setLoadingQuestions(true);
-      const generated = (await geminiService.generateAssessmentQuestions(seed)) as Question[];
-      setQuestionBank(generated);
-      const shuffled = shuffleWithSeed(generated, seed);
-      const selected = shuffled.slice(0, 10).map((q, idx) => ({ ...q, id: idx + 1 }));
-      setRunQuestions(selected);
-
-      if (user) {
-        await firestoreService.saveAssessmentRun(user.uid, {
-          seed,
-          questions: generated,
-          selectedQuestionIds: selected.map((q) => q.id),
-          createdAt: new Date(),
-        });
-      }
-    } catch (e) {
-      console.error("Failed to generate questions (Gemini). Falling back:", e);
-      const shuffled = shuffleWithSeed(fallbackQuestions, seed);
-      const selected = shuffled.slice(0, 10).map((q, idx) => ({ ...q, id: idx + 1 }));
-      setQuestionBank(fallbackQuestions);
-      setRunQuestions(selected);
-    } finally {
-      setLoadingQuestions(false);
-    }
-  };
-
-  useEffect(() => {
-    void generate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  const questions = runQuestions;
+  const maxScore = Math.max(1, (questions.length * 10) / 2);
 
   const handleAnswer = (points: { tech?: number; business?: number; creative?: number }) => {
     setScores((prev) => ({
@@ -262,35 +114,39 @@ export const AssessmentPage: React.FC = () => {
     }));
 
     if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+      setCurrentQuestion((prev) => prev + 1);
     } else {
       setCompleted(true);
     }
   };
 
-  const getRecommendedCareer = (): string => {
-    const max = Math.max(scores.tech, scores.business, scores.creative);
-    if (scores.tech === max) return "ai-engineer";
-    if (scores.business === max) return "chartered-accountant";
-    return "fullstack-dev";
-  };
+  const recommendedRole = useMemo(() => {
+    const { tech, business, creative } = scores;
+    if (tech >= business && tech >= creative) {
+      return roles.find((r) => r.category === "Technology" || r.id === "ai-engineer") || roles[0];
+    }
+    if (business >= tech && business >= creative) {
+      return roles.find((r) => r.category === "Finance" || r.category === "Business") || roles[1];
+    }
+    return roles.find((r) => r.category === "Creative" || r.id === "ui-ux-designer") || roles[2];
+  }, [scores]);
 
   const handleSaveResults = async () => {
-    if (!user) return;
+    if (!user || !recommendedRole) return;
     setSaving(true);
     try {
-      const recommendedCareer = getRecommendedCareer();
-      const totalScore = scores.tech + scores.business + scores.creative;
+      const overallScore = Math.round(
+        ((scores.tech + scores.business + scores.creative) / (questions.length * 10)) * 100
+      );
       await firestoreService.saveAssessmentResult(
         user.uid,
-        totalScore,
-        recommendedCareer,
+        overallScore,
+        recommendedRole.id,
         scores
       );
-      alert("Assessment results saved!");
-    } catch (error) {
-      console.error("Save error:", error);
-      alert("Failed to save results");
+      navigate("/dashboard");
+    } catch (e) {
+      console.error("Failed to save assessment:", e);
     } finally {
       setSaving(false);
     }
@@ -298,209 +154,234 @@ export const AssessmentPage: React.FC = () => {
 
   if (loadingQuestions) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Card className="max-w-xl w-full">
-          <h2 className="text-xl font-bold text-gray-900">Generating your questions...</h2>
-          <p className="text-sm text-gray-600 mt-2">
-            CareerVerse AI is creating a fresh assessment for you.
-          </p>
-          <div className="mt-6 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full w-1/2 bg-gradient-to-r from-indigo-600 to-purple-600 animate-pulse" />
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!loadingQuestions && questions.length === 0) {
-    return (
-      <div className="space-y-8">
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-8">
-          <h1 className="text-4xl font-bold mb-2">Career Assessment</h1>
-          <p className="text-lg opacity-90">
-            We couldn’t generate questions right now. Please check your Gemini API key and try again.
-          </p>
-        </div>
-        <Card>
-          <Button
-            onClick={() => void generate()}
-            className="w-full"
-          >
-            Retry
-          </Button>
-        </Card>
-      </div>
+      <LoadingCard
+        message="Plotting your aptitude route..."
+        subtext="Generating randomized reasoning questions with Google Gemini"
+      />
     );
   }
 
   if (completed) {
-    const recommendedCareer = getRecommendedCareer();
-    const recommendedRole = roles.find((r) => r.id === recommendedCareer);
-    const totalScore = scores.tech + scores.business + scores.creative;
-    const maxScore = 100;
-
     return (
-      <div className="space-y-8">
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-2xl p-8">
-          <h1 className="text-4xl font-bold mb-2">Assessment Complete! 🎉</h1>
-          <p className="text-lg opacity-90">
-            Based on your answers, here's your AI-recommended career path
+      <div className="space-y-8 max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="bg-[#12122B] text-white rounded-3xl p-6 sm:p-8 border border-white/10 shadow-xl relative overflow-hidden">
+          <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#14B8A6]/20 blur-3xl" />
+          <div className="flex items-center gap-2 mb-3">
+            <span className="px-2.5 py-1 rounded-md text-xs font-data font-bold bg-[#14B8A6] text-white uppercase">
+              ASSESSMENT COMPLETE · STATION 06
+            </span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-display font-bold text-white mb-2">
+            Your Verified Career Route
+          </h1>
+          <p className="text-sm sm:text-base font-body text-gray-300">
+            Aptitude profile calibrated across technical reasoning, business acumen, and creative problem solving.
           </p>
         </div>
 
+        {/* Results Breakdown Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Scores */}
-          <Card>
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Your Scores</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold">Tech</span>
-                  <span className="text-sm font-bold text-indigo-600">
-                    {scores.tech}/{maxScore}
-                  </span>
+          {/* Category Scores Card with Count-Up Animation in IBM Plex Mono */}
+          <Card className="flex flex-col justify-between">
+            <div>
+              <h3 className="text-base font-display font-bold text-[#12122B] mb-4 flex items-center gap-2">
+                <Sparkles size={18} className="text-[#4F46E5]" />
+                Domain Scores
+              </h3>
+
+              <div className="space-y-4">
+                {/* Tech */}
+                <div>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <span className="text-xs font-display font-semibold text-[#12122B]">
+                      Technical Aptitude
+                    </span>
+                    <span className="text-xs font-data font-bold text-[#4F46E5]">
+                      <CountUpValue end={scores.tech} /> / {maxScore}
+                    </span>
+                  </div>
+                  <ProgressBar progress={(scores.tech / maxScore) * 100} showPercent={false} color="signal" />
                 </div>
-                <ProgressBar progress={(scores.tech / maxScore) * 100} />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold">Business</span>
-                  <span className="text-sm font-bold text-purple-600">
-                    {scores.business}/{maxScore}
-                  </span>
+
+                {/* Business */}
+                <div>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <span className="text-xs font-display font-semibold text-[#12122B]">
+                      Business Strategy
+                    </span>
+                    <span className="text-xs font-data font-bold text-[#F5A623]">
+                      <CountUpValue end={scores.business} /> / {maxScore}
+                    </span>
+                  </div>
+                  <ProgressBar progress={(scores.business / maxScore) * 100} showPercent={false} color="milestone" />
                 </div>
-                <ProgressBar progress={(scores.business / maxScore) * 100} />
-              </div>
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold">Creative</span>
-                  <span className="text-sm font-bold text-pink-600">
-                    {scores.creative}/{maxScore}
-                  </span>
+
+                {/* Creative */}
+                <div>
+                  <div className="flex justify-between items-baseline mb-1">
+                    <span className="text-xs font-display font-semibold text-[#12122B]">
+                      Creative & Design
+                    </span>
+                    <span className="text-xs font-data font-bold text-[#14B8A6]">
+                      <CountUpValue end={scores.creative} /> / {maxScore}
+                    </span>
+                  </div>
+                  <ProgressBar progress={(scores.creative / maxScore) * 100} showPercent={false} color="growth" />
                 </div>
-                <ProgressBar progress={(scores.creative / maxScore) * 100} />
               </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => {
+                  setCurrentQuestion(0);
+                  setScores({ tech: 0, business: 0, creative: 0 });
+                  setCompleted(false);
+                }}
+                className="w-full flex items-center justify-center gap-2 text-xs font-data font-bold text-[#6B7280] hover:text-[#12122B] py-2 cursor-pointer"
+              >
+                <RotateCcw size={14} /> Retake Assessment
+              </button>
             </div>
           </Card>
 
-          {/* Recommendation */}
-          <Card className="md:col-span-2 bg-gradient-to-r from-indigo-50 to-purple-50">
-            <div className="flex items-start justify-between mb-4">
-              <h3 className="text-2xl font-bold text-gray-900">
-                Your Perfect Career
-              </h3>
-              <Trophy className="text-yellow-500" size={32} />
+          {/* Recommended Destination Card */}
+          <Card className="md:col-span-2 border-[#4F46E5]/40 flex flex-col justify-between">
+            <div>
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <span className="text-xs font-data font-bold text-[#4F46E5] uppercase tracking-wider">
+                    PRIMARY MATCH
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-display font-bold text-[#12122B]">
+                    {recommendedRole?.name}
+                  </h3>
+                </div>
+                <Trophy size={28} className="text-[#F5A623]" />
+              </div>
+
+              <p className="text-sm font-body text-[#6B7280] leading-relaxed mb-6">
+                {recommendedRole?.description}
+              </p>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="p-3.5 rounded-xl bg-[#FAFAF7] border border-gray-200">
+                  <p className="text-xs font-data text-[#6B7280] uppercase">Target Compensation</p>
+                  <p className="text-lg font-data font-bold text-[#0F766E]">
+                    {recommendedRole?.salaryRange}
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-[#FAFAF7] border border-gray-200">
+                  <p className="text-xs font-data text-[#6B7280] uppercase">Hiring Velocity</p>
+                  <p className="text-lg font-data font-bold text-[#4F46E5]">
+                    {recommendedRole?.trendScore.toFixed(1)} / 10
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <span className="text-xs font-data font-bold text-[#6B7280] uppercase block mb-2">
+                  Core Skills to Acquire:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {recommendedRole?.requiredSkills.slice(0, 5).map((skill) => (
+                    <Badge key={skill} variant="ink">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {recommendedRole && (
-              <div>
-                <h4 className="text-3xl font-bold text-indigo-600 mb-2">
-                  {recommendedRole.name}
-                </h4>
-                <p className="text-gray-600 mb-4">{recommendedRole.description}</p>
-
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <p className="text-sm text-gray-600">Salary</p>
-                    <p className="font-bold text-green-600">
-                      {recommendedRole.salaryRange}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Trend</p>
-                    <p className="font-bold text-yellow-600">
-                      {recommendedRole.trendScore.toFixed(1)}/10
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
-                    Key Skills:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {recommendedRole.requiredSkills.slice(0, 4).map((skill) => (
-                      <Badge key={skill} variant="primary">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <Button
-                  onClick={handleSaveResults}
-                  disabled={saving}
-                  className="w-full"
-                >
-                  {saving ? "Saving..." : "Save & Continue"}
-                </Button>
-              </div>
-            )}
+            <div className="mt-6 pt-4 border-t border-gray-100 flex gap-3">
+              <Button
+                onClick={handleSaveResults}
+                disabled={saving}
+                className="w-full sm:w-auto"
+              >
+                {saving ? "Saving Route..." : "Save to Dashboard"} <ArrowRight size={16} />
+              </Button>
+            </div>
           </Card>
         </div>
       </div>
     );
   }
 
+  const currentQ = questions[currentQuestion];
+  const progressPercent = ((currentQuestion + 1) / questions.length) * 100;
+
   return (
-    <div className="space-y-8">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-8">
-        <h1 className="text-4xl font-bold mb-2">Career Assessment</h1>
-        <p className="text-lg opacity-90">
-          Answer 10 quick questions to get your AI-recommended career path
+    <div className="space-y-8 max-w-3xl mx-auto">
+      {/* Hero */}
+      <div className="bg-[#12122B] text-white rounded-3xl p-6 sm:p-8 border border-white/10 shadow-xl relative overflow-hidden">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="px-2.5 py-1 rounded-md text-xs font-data font-bold bg-[#4F46E5] text-white uppercase">
+            <PenTool size={12} className="inline mr-1" />
+            STATION 06 · APTITUDE ASSESSMENT
+          </span>
+          <span className="text-xs font-mono text-gray-400">Quick 5-Question Calibration</span>
+        </div>
+        <h1 className="text-3xl font-display font-bold text-white mb-2">
+          Career Aptitude Assessment
+        </h1>
+        <p className="text-sm font-body text-gray-300">
+          Answer each scenario honestly to uncover your optimal Indian job market trajectory.
         </p>
       </div>
 
-      {/* Progress */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold">Progress</h3>
-          <span className="text-2xl font-bold text-indigo-600">
-            {currentQuestion + 1}/{questions.length}
+      {/* Progress Track */}
+      <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-2">
+        <div className="flex justify-between items-center text-xs font-data font-bold">
+          <span className="text-[#6B7280]">
+            QUESTION {currentQuestion + 1} OF {questions.length}
+          </span>
+          <span className="text-[#4F46E5]">
+            {Math.round(progressPercent)}% COMPLETED
           </span>
         </div>
-        <ProgressBar
-          progress={((currentQuestion + 1) / questions.length) * 100}
-          showPercent={false}
-        />
-      </Card>
+        <ProgressBar progress={progressPercent} showPercent={false} color="signal" />
+      </div>
 
-      {/* Question */}
-      <Card className="bg-gradient-to-br from-indigo-50 to-purple-50">
+      {/* Question Card */}
+      <Card className="border-gray-200">
         <div className="mb-6">
-          <Badge variant="secondary" className="mb-4">
-            {questions[currentQuestion].category}
-          </Badge>
-          <h2 className="text-2xl font-bold text-gray-900">
-            {questions[currentQuestion].question}
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-data font-bold bg-[#FAFAF7] border border-gray-200 text-[#12122B] inline-block mb-3">
+            {currentQ.category} Focus
+          </span>
+          <h2 className="text-xl sm:text-2xl font-display font-bold text-[#12122B] leading-snug">
+            {currentQ.question}
           </h2>
         </div>
 
         <div className="space-y-3">
-          {questions[currentQuestion].answers.map((answer, index) => (
+          {currentQ.answers.map((answer, index) => (
             <button
               key={index}
               onClick={() => handleAnswer(answer.points)}
-              className="w-full p-4 text-left bg-white border-2 border-gray-200 rounded-lg hover:border-indigo-600 hover:bg-indigo-50 transition font-medium text-gray-900"
+              className="w-full p-4 rounded-xl text-left bg-white border border-gray-200 hover:border-[#4F46E5] hover:bg-[#4F46E5]/5 transition-all duration-150 cursor-pointer flex items-center justify-between group"
             >
-              {answer.text}
+              <span className="text-sm font-body font-medium text-[#12122B] group-hover:text-[#4F46E5]">
+                {answer.text}
+              </span>
+              <ArrowRight size={16} className="text-gray-300 group-hover:text-[#4F46E5] transition-transform group-hover:translate-x-1" />
             </button>
           ))}
         </div>
       </Card>
 
-      {/* Navigation */}
-      <div className="flex justify-between items-center">
+      {/* Navigation Helper */}
+      <div className="flex items-center justify-between px-2 text-xs font-data text-[#6B7280]">
         <button
-          onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+          onClick={() => setCurrentQuestion((prev) => Math.max(0, prev - 1))}
           disabled={currentQuestion === 0}
-          className="px-6 py-2 border-2 border-gray-300 rounded-lg font-medium text-gray-700 disabled:opacity-50"
+          className="hover:text-[#12122B] disabled:opacity-40 cursor-pointer"
         >
-          Previous
+          ← Previous Question
         </button>
-        <span className="text-sm text-gray-600">
-          <Clock size={16} className="inline mr-2" />
-          Take your time, there's no time limit
+        <span className="flex items-center gap-1">
+          <Clock size={14} /> No time limit
         </span>
       </div>
     </div>

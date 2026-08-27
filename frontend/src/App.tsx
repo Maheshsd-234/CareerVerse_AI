@@ -21,15 +21,18 @@ const AppRoutes: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 to-purple-600">
-        <div className="text-center">
-          <div className="inline-block">
-            <div className="relative w-12 h-12">
-              <div className="absolute inset-0 rounded-full border-4 border-white/20"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-white border-t-transparent animate-spin"></div>
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#12122B] text-white">
+        <div className="text-center space-y-4">
+          <div className="relative inline-flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-4 border-[#4F46E5]/20 border-t-[#4F46E5] animate-spin"></div>
+            <span className="absolute w-2 h-2 rounded-full bg-[#F5A623] animate-ping" />
           </div>
-          <p className="text-white mt-4 font-medium">Loading CareerVerse...</p>
+          <p className="font-display font-bold text-lg text-white">
+            Mapping your career route...
+          </p>
+          <p className="font-data text-xs text-gray-400">
+            Calibrating Waypoint System
+          </p>
         </div>
       </div>
     );
@@ -46,12 +49,12 @@ const AppRoutes: React.FC = () => {
         path="/*"
         element={
           user ? (
-            <div className="flex flex-col h-screen bg-gray-100">
+            <div className="flex flex-col h-screen bg-[#FAFAF7] text-[#12122B]">
               <Navbar />
               <div className="flex flex-1 min-h-0">
                 <Sidebar />
                 <main className="flex-1 overflow-y-auto">
-                  <div className="w-full px-4 py-4 md:px-6 md:py-6">
+                  <div className="w-full px-4 py-6 md:px-8 md:py-8">
                     <Routes>
                       <Route path="/dashboard" element={<DashboardPage />} />
                       <Route
@@ -88,7 +91,6 @@ function App() {
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
-
     </Router>
   );
 }

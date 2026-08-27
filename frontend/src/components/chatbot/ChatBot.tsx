@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { History, MessageSquarePlus, Send } from "lucide-react";
+import { motion } from "framer-motion";
+import { History, MessageSquarePlus, Send, Sparkles, ArrowRight } from "lucide-react";
 import { formatGeminiError, geminiService } from "../../services/geminiService";
 import { firestoreService } from "../../services/firestoreService";
 import { useAuth } from "../../hooks/useAuth";
 import { TypingAnimation } from "../ui/Loading";
+import { Button } from "../ui/UI";
 import type { ChatMessage, ChatSession } from "../../types";
 
 const newMessageId = () => crypto.randomUUID();
@@ -32,15 +33,21 @@ const buildSessionTitle = (messages: ChatMessage[]) => {
     const title = firstUser.content.trim().slice(0, 48);
     return title.length < firstUser.content.trim().length ? `${title}...` : title;
   }
-  return `Chat · ${new Date().toLocaleDateString()}`;
+  return `Route Chat · ${new Date().toLocaleDateString()}`;
 };
 
 const hasSavableMessages = (messages: ChatMessage[]) =>
   messages.some((m) => m.content.trim());
 
+const PROMPT_SUGGESTIONS = [
+  "What is the best career route after 12th Science PCM?",
+  "How can I become an AI Engineer in India starting from 1st year?",
+  "Compare Chartered Accountancy (CA) vs MBA in Finance salaries.",
+  "Which high-demand skills should I learn for tech placements in 2026?",
+];
+
 export const ChatBot: React.FC = () => {
   const { user } = useAuth();
-  const location = useLocation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [input, setInput] = useState("");
@@ -52,9 +59,7 @@ export const ChatBot: React.FC = () => {
   const messagesRef = useRef<ChatMessage[]>([]);
   const sendingRef = useRef(false);
   const viewingSessionIdRef = useRef<string | null>(null);
-  const lastSendRef = useRef<{ content: string; at: number } | null>(null);
   const archiveInFlightRef = useRef(false);
-  const userIdRef = useRef<string | null>(null);
 
   const isViewingHistory = viewingSessionId !== null;
 
@@ -98,137 +103,63 @@ export const ChatBot: React.FC = () => {
           id: newMessageId(),
           title: buildSessionTitle(toSave),
           messages: toSave,
-          createdAt: now,
           updatedAt: now,
+          createdAt: now,
         };
 
         await firestoreService.saveChatSession(user.uid, session);
-        setSessions((prev) => {
-          const rest = prev.filter((s) => s.id !== session.id);
-          return [session, ...rest].sort(
-            (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
-          );
-        });
-        await loadSessions();
+        localStorage.removeItem(pendingArchiveKey(user.uid));
+
+        setSessions((prev) => [
+          session,
+          ...prev.filter((s) => s.id !== session.id),
+        ]);
         return true;
       } catch (error) {
-        console.error("Failed to archive chat:", error);
+        console.error("Failed to archive chat session:", error);
         return false;
       } finally {
         archiveInFlightRef.current = false;
       }
     },
-    [user, loadSessions]
+    [user]
   );
 
   const startNewChat = useCallback(async () => {
-    const snapshot = [...messagesRef.current];
-    if (viewingSessionIdRef.current === null && hasSavableMessages(snapshot)) {
-      await archiveCurrentChat(snapshot);
+    if (!isViewingHistory && hasSavableMessages(messagesRef.current)) {
+      await archiveCurrentChat();
     }
-    setMessages([]);
     setViewingSessionId(null);
+    setMessages([]);
     setInput("");
-  }, [archiveCurrentChat]);
+  }, [archiveCurrentChat, isViewingHistory]);
 
-  const openSession = (session: ChatSession) => {
-    setViewingSessionId(session.id);
-    setMessages(normalizeMessages(session.messages));
-    setInput("");
-  };
-
-  // Load history on login; restore chat saved before refresh
-  useEffect(() => {
-    const uid = user?.uid ?? null;
-    if (!uid) {
-      userIdRef.current = null;
-      setSessions([]);
-      setMessages([]);
-      return;
-    }
-    if (userIdRef.current === uid) return;
-    userIdRef.current = uid;
-
-    void (async () => {
-      const raw = sessionStorage.getItem(pendingArchiveKey(uid));
-      if (raw) {
-        sessionStorage.removeItem(pendingArchiveKey(uid));
-        try {
-          const pending = JSON.parse(raw) as { messages: ChatMessage[] };
-          if (pending.messages?.length) {
-            await archiveCurrentChat(
-              pending.messages.map((m) => ({
-                ...m,
-                timestamp: new Date(m.timestamp),
-              }))
-            );
-          }
-        } catch (error) {
-          console.error("Failed to restore pending chat:", error);
-        }
+  const openSession = useCallback(
+    async (session: ChatSession) => {
+      if (!isViewingHistory && hasSavableMessages(messagesRef.current)) {
+        await archiveCurrentChat();
       }
+      setViewingSessionId(session.id);
+      setMessages(normalizeMessages(session.messages));
+    },
+    [archiveCurrentChat, isViewingHistory]
+  );
 
-      await loadSessions();
-      setMessages([]);
-      setViewingSessionId(null);
-    })();
-  }, [user?.uid, loadSessions, archiveCurrentChat]);
-
-  // Archive when navigating away from chatbot
-  const prevPathRef = useRef(location.pathname);
-  useEffect(() => {
-    const prev = prevPathRef.current;
-    prevPathRef.current = location.pathname;
-
-    if (
-      user &&
-      prev === "/chatbot" &&
-      location.pathname !== "/chatbot" &&
-      viewingSessionIdRef.current === null &&
-      hasSavableMessages(messagesRef.current)
-    ) {
-      void archiveCurrentChat([...messagesRef.current]);
-    }
-  }, [location.pathname, user, archiveCurrentChat]);
-
-  // Save to sessionStorage before refresh / tab close
   useEffect(() => {
     if (!user) return;
+    void loadSessions();
+  }, [user, loadSessions]);
 
-    const persistOnExit = () => {
-      if (sendingRef.current || viewingSessionIdRef.current !== null) return;
-      const current = messagesRef.current;
-      if (!hasSavableMessages(current)) return;
+  const handleSendMessage = async (e?: React.FormEvent, customPrompt?: string) => {
+    if (e) e.preventDefault();
+    const content = (customPrompt ?? input).trim();
+    if (!content || loading || isViewingHistory || sendingRef.current) return;
 
-      sessionStorage.setItem(
-        pendingArchiveKey(user.uid),
-        JSON.stringify({ messages: current })
-      );
-    };
-
-    window.addEventListener("beforeunload", persistOnExit);
-    window.addEventListener("pagehide", persistOnExit);
-    return () => {
-      window.removeEventListener("beforeunload", persistOnExit);
-      window.removeEventListener("pagehide", persistOnExit);
-    };
-  }, [user]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || !user || loading || sendingRef.current || isViewingHistory)
-      return;
-
-    const now = Date.now();
-    const trimmed = input.trim();
-    const last = lastSendRef.current;
-    if (last && last.content === trimmed && now - last.at < 1200) {
-      return;
-    }
     sendingRef.current = true;
-    lastSendRef.current = { content: trimmed, at: now };
+    setInput("");
+    setLoading(true);
+    setIsStreaming(true);
 
-    const content = trimmed;
     const userMessage: ChatMessage = {
       id: newMessageId(),
       role: "user",
@@ -242,10 +173,6 @@ export const ChatBot: React.FC = () => {
       content: "",
       timestamp: new Date(),
     };
-
-    setInput("");
-    setLoading(true);
-    setIsStreaming(true);
 
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
 
@@ -277,39 +204,40 @@ export const ChatBot: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full min-h-0 bg-gray-50">
-      <aside className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col">
+    <div className="flex h-full min-h-0 bg-[#FAFAF7] rounded-2xl border border-gray-200 overflow-hidden shadow-xs">
+      {/* Session History Sidebar */}
+      <aside className="w-64 shrink-0 border-r border-gray-200 bg-white flex flex-col hidden sm:flex">
         <div className="p-3 border-b border-gray-200">
           <button
             type="button"
             onClick={() => void startNewChat()}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[#4F46E5] text-white text-xs font-display font-bold hover:bg-[#4338CA] transition cursor-pointer shadow-xs"
           >
-            <MessageSquarePlus size={18} />
-            New chat
+            <MessageSquarePlus size={16} />
+            New Counseling Session
           </button>
         </div>
 
-        <div className="px-3 py-2 flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          <History size={14} />
-          History
+        <div className="px-3 py-2 flex items-center gap-2 text-[10px] font-data font-bold text-[#6B7280] uppercase tracking-wider">
+          <History size={12} />
+          Transit Logs
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-1">
           {sessionsLoading ? (
-            <p className="text-sm text-gray-400 px-2 py-4">Loading...</p>
+            <p className="text-xs font-data text-gray-400 px-2 py-4">Calibrating logs...</p>
           ) : sessions.length === 0 ? (
-            <p className="text-sm text-gray-400 px-2 py-4">No past chats yet</p>
+            <p className="text-xs font-data text-gray-400 px-2 py-4">No past logs recorded</p>
           ) : (
             sessions.map((session) => (
               <button
                 key={session.id}
                 type="button"
                 onClick={() => openSession(session)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition truncate ${
+                className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-display font-medium transition truncate cursor-pointer ${
                   viewingSessionId === session.id
-                    ? "bg-indigo-50 text-indigo-700 font-medium"
-                    : "text-gray-700 hover:bg-gray-100"
+                    ? "bg-[#4F46E5]/10 text-[#4F46E5] font-bold border border-[#4F46E5]/20"
+                    : "text-[#12122B]/80 hover:bg-gray-100"
                 }`}
                 title={session.title}
               >
@@ -320,62 +248,92 @@ export const ChatBot: React.FC = () => {
         </div>
       </aside>
 
-      <div className="flex flex-col flex-1 min-w-0">
+      {/* Chat Area */}
+      <div className="flex flex-col flex-1 min-w-0 bg-[#FAFAF7]">
         {isViewingHistory && (
-          <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-sm text-amber-800 flex items-center justify-between">
-            <span>Viewing a past conversation</span>
+          <div className="px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs font-data text-amber-900 flex items-center justify-between">
+            <span>Viewing archived conversation log</span>
             <button
               type="button"
               onClick={() => void startNewChat()}
-              className="text-indigo-600 font-medium hover:underline"
+              className="text-[#4F46E5] font-bold hover:underline cursor-pointer"
             >
-              Start new chat
+              Start new session →
             </button>
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Message Stream */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           {messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-center">
-              <div className="max-w-md">
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  Career Advisor Bot
-                </h3>
-                <p className="text-gray-600">
-                  Ask me anything about careers, skills, education paths, or job
-                  markets in India!
-                </p>
+            <div className="flex flex-col items-center justify-center h-full text-center max-w-lg mx-auto py-8">
+              <div className="w-12 h-12 rounded-2xl bg-[#4F46E5]/10 text-[#4F46E5] flex items-center justify-center mb-3">
+                <Sparkles size={24} />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-[#12122B] mb-2">
+                24/7 AI Career Counselor
+              </h3>
+              <p className="text-xs font-body text-[#6B7280] mb-6">
+                Trained on Indian educational streams, entrance exams, tier-1/2 college pathways, and modern hiring trends.
+              </p>
+
+              {/* Prompt Suggestions */}
+              <div className="w-full space-y-2 text-left">
+                <span className="text-[10px] font-data font-bold text-[#6B7280] uppercase tracking-wider block px-1">
+                  Suggested Waypoint Queries:
+                </span>
+                {PROMPT_SUGGESTIONS.map((prompt, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSendMessage(undefined, prompt)}
+                    className="w-full p-2.5 rounded-xl bg-white border border-gray-200 hover:border-[#4F46E5] hover:bg-[#4F46E5]/5 text-xs font-display font-medium text-[#12122B] transition flex items-center justify-between text-left cursor-pointer group"
+                  >
+                    <span>{prompt}</span>
+                    <ArrowRight size={14} className="text-gray-300 group-hover:text-[#4F46E5] transition-transform group-hover:translate-x-1" />
+                  </button>
+                ))}
               </div>
             </div>
           ) : (
             messages.map((message) => (
-              <div
+              <motion.div
                 key={message.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
                 className={`flex ${
                   message.role === "user" ? "justify-end" : "justify-start"
                 }`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+                  className={`max-w-md lg:max-w-xl px-4 py-3 rounded-2xl text-sm font-body leading-relaxed ${
                     message.role === "user"
-                      ? "bg-indigo-600 text-white rounded-br-none"
-                      : "bg-white text-gray-800 rounded-bl-none shadow-md"
+                      ? "bg-[#4F46E5] text-white rounded-br-xs shadow-xs"
+                      : "bg-white text-[#12122B] border border-gray-200/90 rounded-bl-xs shadow-xs"
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
-              </div>
+              </motion.div>
             ))
           )}
-          {isStreaming && messages.length === 0 && (
-            <div className="flex justify-start">
-              <div className="bg-white text-gray-800 px-4 py-3 rounded-lg rounded-bl-none shadow-md">
+
+          {/* Typing Indicator with 3 pulsing dots in Signal Blue */}
+          {isStreaming && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-start"
+            >
+              <div className="bg-white border border-gray-200 px-4 py-3 rounded-2xl rounded-bl-xs shadow-xs flex items-center gap-2">
+                <span className="text-xs font-data text-[#6B7280]">Counselor is mapping</span>
                 <TypingAnimation />
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
 
+        {/* Chat Input Bar */}
         <form
           onSubmit={handleSendMessage}
           className="border-t border-gray-200 p-4 bg-white"
@@ -388,18 +346,18 @@ export const ChatBot: React.FC = () => {
               placeholder={
                 isViewingHistory
                   ? "Start a new chat to continue..."
-                  : "Ask about careers, skills, or education..."
+                  : "Ask about careers, skills, 10th/12th streams, colleges, or salary scales..."
               }
               disabled={loading || isViewingHistory}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 disabled:bg-gray-100"
+              className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4F46E5] text-xs font-body disabled:bg-gray-100"
             />
-            <button
+            <Button
               type="submit"
               disabled={loading || !input.trim() || isViewingHistory}
-              className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 transition"
+              size="md"
             >
-              <Send size={20} />
-            </button>
+              <Send size={16} />
+            </Button>
           </div>
         </form>
       </div>

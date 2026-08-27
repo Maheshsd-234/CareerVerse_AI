@@ -2,6 +2,7 @@ export interface User {
   uid: string;
   email: string;
   displayName: string;
+  currentStage?: string; // "school" | "stream" | "skills" | "resume" | "interview" | "placement"
   createdAt: Date | unknown;
   skills: string[];
   selectedCareer: string | null;
@@ -21,7 +22,7 @@ export interface Role {
 export interface CareerPath {
   id: string;
   name: string;
-  category: string;
+  category: string; // "After 10th" | "After 12th" | "Masters"
   subcategory: string;
   careerOptions: string[];
   requiredSkills: string[];
@@ -29,6 +30,8 @@ export interface CareerPath {
   salaryRange: string;
   futureScope: string;
   duration: number; // in years
+  eligibleDegrees?: string[]; // Qualifying degrees (for Masters courses)
+  valueProposition?: string; // High value ROI insights
   streams?: Record<
     string,
     {

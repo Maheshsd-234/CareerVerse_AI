@@ -1,11 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { CheckCircle, Clock, Search, Sparkles, X } from "lucide-react";
+import { CheckCircle, Clock, Search, Sparkles, X, MapPin, ArrowRight, Layers } from "lucide-react";
 import { Card, Badge, Button } from "../../components/ui/UI";
 import { roles } from "../../data/roles";
 import { useAuth } from "../../hooks/useAuth";
 import { firestoreService } from "../../services/firestoreService";
+import { VerticalRouteLine } from "../../components/ui/RouteLine";
+import type { RoadmapStationItem } from "../../components/ui/RouteLine";
 
 type ExperienceLevel = "Beginner" | "Intermediate" | "Experienced";
+
+interface YearPlan {
+  title: string;
+  milestones: string[];
+  focusSkills: string[];
+}
 
 const generatePersonalRoadmap = (params: {
   roleId: string;
@@ -25,26 +33,23 @@ const generatePersonalRoadmap = (params: {
 
   const baseMilestones: Record<ExperienceLevel, string[]> = {
     Beginner: [
-      "Build strong fundamentals",
-      "Learn core concepts with daily practice",
-      "Ship small projects to build confidence",
+      "Master foundational concepts and domain syntax",
+      "Solve practical problem sets daily to build muscle memory",
+      "Ship small end-to-end projects to validate learning",
     ],
     Intermediate: [
-      "Strengthen weak areas and system design basics",
-      "Build portfolio projects with real-world features",
-      "Start internships / freelancing / open source",
+      "Deepen system architecture and design principles",
+      "Build production-grade capstone projects with real datasets",
+      "Contribute to open source and start targeted internship applications",
     ],
     Experienced: [
-      "Focus on specialization and advanced topics",
-      "Optimize for impact: scale, reliability, ownership",
-      "Prepare for high-level interviews and leadership",
+      "Focus on specialization, high scalability, and reliability",
+      "Lead complex technical designs and system optimizations",
+      "Prepare for senior-level interview rounds and portfolio presentations",
     ],
   };
 
-  const plan: Record<
-    string,
-    { title: string; milestones: string[]; focusSkills: string[] }
-  > = {};
+  const plan: Record<string, YearPlan> = {};
   const perYear = Math.max(1, Math.ceil(missingSkills.length / years));
 
   for (let i = 1; i <= years; i++) {
@@ -55,22 +60,22 @@ const generatePersonalRoadmap = (params: {
     const milestones = [
       ...baseMilestones[experienceLevel],
       ...(skillsForYear.length
-        ? [`Master: ${skillsForYear.join(", ")}`]
-        : ["Consolidate strengths and build advanced projects"]),
+        ? [`Target competencies: ${skillsForYear.join(", ")}`]
+        : ["Consolidate advanced strengths and build industry-grade projects"]),
       intensityHint === "high"
-        ? "Build 2–3 serious projects + publish portfolio"
+        ? "Build 2–3 serious deployed applications + portfolio proof"
         : intensityHint === "medium"
-        ? "Build 1–2 solid projects + improve portfolio"
-        : "Build 1 focused project + consistent practice",
+        ? "Build 1–2 solid projects with clean architecture"
+        : "Build 1 focused project + consistent weekly milestones",
     ];
 
     plan[yearKey] = {
       title:
         i === 1
-          ? "Foundation"
+          ? "Foundation & Core Principles"
           : i === years
-          ? "Mastery & Job Readiness"
-          : "Growth & Projects",
+          ? "Mastery & Placement Readiness"
+          : "System Design & Projects",
       focusSkills: Array.from(new Set([...skillsForYear, ...genericFocus])).slice(0, 8),
       milestones,
     };
@@ -91,6 +96,7 @@ export const RoadmapPage: React.FC = () => {
   const [hoursPerWeek, setHoursPerWeek] = useState<number>(6);
   const [knownSkills, setKnownSkills] = useState<string[]>(appUser?.skills || []);
   const [saving, setSaving] = useState(false);
+  const [activeStationYear, setActiveStationYear] = useState<number>(1);
 
   const selectedRoleData = roles.find((r) => r.id === selectedRole);
 
@@ -101,346 +107,305 @@ export const RoadmapPage: React.FC = () => {
       (r) =>
         r.name.toLowerCase().includes(q) ||
         r.category.toLowerCase().includes(q) ||
-        r.requiredSkills.some((s) => s.toLowerCase().includes(q))
+        r.description.toLowerCase().includes(q)
     );
   }, [roleQuery]);
 
-  const roadmap = useMemo(() => {
+  const activePlan = useMemo(() => {
+    if (!selectedRoleData) return null;
+
     return generatePersonalRoadmap({
       roleId: selectedRole,
       years,
       experienceLevel,
       hoursPerWeek,
-      knownSkills,
+      knownSkills: appUser?.skills || [],
     });
-  }, [selectedRole, years, experienceLevel, hoursPerWeek, knownSkills]);
+  }, [selectedRoleData, selectedRole, years, experienceLevel, hoursPerWeek, appUser?.skills]);
+
+  // Convert activePlan into RoadmapStationItem array for VerticalRouteLine
+  const roadmapStationItems: RoadmapStationItem[] = useMemo(() => {
+    if (!activePlan) return [];
+    return Object.entries(activePlan).map(([yearKey, val], idx) => {
+      const planItem = val as YearPlan;
+      return {
+        id: yearKey,
+        yearLabel: `Year 0${idx + 1}`,
+        title: planItem.title,
+        milestones: planItem.milestones,
+        focusSkills: planItem.focusSkills || [],
+        status:
+          idx + 1 === activeStationYear
+            ? "current"
+            : idx + 1 < activeStationYear
+            ? "completed"
+            : "upcoming",
+      };
+    });
+  }, [activePlan, activeStationYear]);
 
   return (
-    <div className="space-y-8">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-8">
-        <h1 className="text-4xl font-bold mb-2">Career Roadmap Generator</h1>
-        <p className="text-lg opacity-90">
-          Dynamic learning path for your chosen career role
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* Wayfinding Hero */}
+      <div className="bg-[#12122B] text-white rounded-3xl p-6 sm:p-8 border border-white/10 shadow-xl relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#4F46E5]/20 blur-3xl" />
+        <div className="flex items-center gap-2 mb-3">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-data font-bold tracking-wider uppercase bg-[#4F46E5] text-white">
+            <MapPin size={14} />
+            STATION 05 · DYNAMIC ROADMAP
+          </span>
+          <span className="text-xs font-mono text-gray-400">Chronological Route</span>
+        </div>
+        <h1 className="text-3xl sm:text-4xl font-display font-bold mb-2 text-white">
+          Multi-Year Career Roadmap
+        </h1>
+        <p className="text-sm sm:text-base font-body text-gray-300 max-w-2xl">
+          Follow a structured vertical transit line mapped across yearly checkpoints, competencies, and milestones.
         </p>
       </div>
 
-      {/* Role Selection */}
-      <Card>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Select Target Role</h2>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setPickerOpen((v) => !v)}
-            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl text-left bg-white hover:border-indigo-600 transition"
-          >
-            <div className="font-semibold text-gray-900">
-              {selectedRoleData ? selectedRoleData.name : "Select role"}
-            </div>
-            <div className="text-sm text-gray-600">
-              {selectedRoleData ? selectedRoleData.category : "Choose your target role"}
-            </div>
-          </button>
-
-          {pickerOpen && (
-            <div className="absolute left-0 right-0 mt-2 rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden z-20">
-              <div className="p-3 border-b">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-                  <input
-                    value={roleQuery}
-                    onChange={(e) => setRoleQuery(e.target.value)}
-                    placeholder="Search roles, categories, or skills..."
-                    className="w-full pl-10 pr-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                  />
-                </div>
-              </div>
-              <div className="max-h-72 overflow-y-auto">
-                {filteredRoles.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => {
-                      setSelectedRole(r.id);
-                      setPickerOpen(false);
-                      setRoleQuery("");
-                    }}
-                    className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition ${
-                      r.id === selectedRole ? "bg-indigo-50" : ""
-                    }`}
-                  >
-                    <div className="font-semibold text-gray-900">{r.name}</div>
-                    <div className="text-xs text-gray-600">{r.category}</div>
-                  </button>
-                ))}
-                {filteredRoles.length === 0 && (
-                  <div className="px-4 py-6 text-sm text-gray-500">
-                    No roles match your search.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+      {/* Target Role Selector Toolbar */}
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-data font-bold text-[#6B7280] uppercase">
+            Current Destination Track:
+          </span>
+          <h2 className="text-2xl font-display font-bold text-[#12122B]">
+            {selectedRoleData?.name || "Select Role"}
+          </h2>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="ink">{selectedRoleData?.category}</Badge>
+            <span className="text-xs font-data font-semibold text-[#0F766E]">
+              Avg Salary: {selectedRoleData?.salaryRange}
+            </span>
+          </div>
         </div>
-      </Card>
 
-      {/* Roadmap */}
-      {selectedRoleData && roadmap && (
-        <div className="space-y-6">
-          {/* Header */}
-          <Card className="bg-gradient-to-r from-indigo-50 to-purple-50">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {selectedRoleData.name}
-            </h2>
-            <p className="text-gray-600 mb-4">{selectedRoleData.description}</p>
-            <div className="flex flex-wrap gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Duration</p>
-                <p className="text-2xl font-bold text-indigo-600">{years} Years</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Salary Range</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {selectedRoleData.salaryRange}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Trend Score</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {selectedRoleData.trendScore.toFixed(1)}/10
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Your level</p>
-                <p className="text-2xl font-bold text-purple-600">{experienceLevel}</p>
-              </div>
-            </div>
-          </Card>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setPickerOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Search size={16} />
+            Change Destination
+          </Button>
 
-          {/* Timeline */}
-          <div className="space-y-6">
-            {Object.entries(roadmap).map(([year, data], index) => (
-              <Card key={year}>
-                <div className="flex items-start gap-4">
-                  {/* Year Badge */}
-                  <div className="flex-shrink-0">
-                    <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-xl">
-                      {index + 1}
-                    </div>
-                  </div>
+          <Button
+            onClick={() => setJourneyOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Sparkles size={16} />
+            Personalize Plan
+          </Button>
+        </div>
+      </div>
 
-                  {/* Content */}
-                  <div className="flex-1">
-                    <h3 className="text-2xl font-bold text-gray-900 mb-4">
-                      {data.title}
-                    </h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {data.milestones.map((milestone, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
-                        >
-                          <CheckCircle
-                            size={20}
-                            className="text-green-600 flex-shrink-0 mt-0.5"
-                          />
-                          <span className="text-gray-700 font-medium">
-                            {milestone}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Key Skills for this year */}
-                    <div className="mt-4 pt-4 border-t">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">
-                        Focus Skills:
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {data.focusSkills.map((skill) => (
-                          <Badge key={skill} variant="primary">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))}
+      {/* Main Roadmap Area using Vertical Route Line Motif */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Left 2 Cols: The Vertical Route Line */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-lg font-display font-bold text-[#12122B] flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#F5A623]" />
+              Route Stations ({roadmapStationItems.length} Years)
+            </h3>
+            <span className="text-xs font-data text-[#6B7280]">
+              Click station to highlight
+            </span>
           </div>
 
-          {/* Required Skills Overview */}
-          <Card>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Skills to Master
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {selectedRoleData.requiredSkills.map((skill) => (
+          <VerticalRouteLine
+            items={roadmapStationItems}
+            activeYear={activeStationYear}
+            onSelectYear={(idx) => setActiveStationYear(idx + 1)}
+          />
+        </div>
+
+        {/* Right Col: Certifications, Milestones & Waypoint Summary */}
+        <div className="space-y-6">
+          <Card className="border-[#4F46E5]/30">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="p-2 rounded-xl bg-[#4F46E5]/10 text-[#4F46E5]">
+                <Layers size={18} />
+              </span>
+              <div>
+                <h4 className="text-base font-display font-bold text-[#12122B]">
+                  Required Competencies
+                </h4>
+                <p className="text-xs font-body text-[#6B7280]">Key Industry Credentials</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              {selectedRoleData?.requiredSkills.slice(0, 4).map((skill, idx) => (
                 <div
-                  key={skill}
-                  className="p-3 bg-indigo-50 rounded-lg border border-indigo-200"
+                  key={idx}
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAFAF7] border border-gray-200"
                 >
-                  <p className="font-medium text-indigo-900">{skill}</p>
+                  <span className="text-xs font-display font-semibold text-[#12122B]">
+                    {skill} Mastery
+                  </span>
+                  <span className="text-[10px] font-data font-bold text-[#4F46E5] uppercase">
+                    Level 0{idx + 1}
+                  </span>
                 </div>
               ))}
             </div>
           </Card>
 
-          {/* Government Exams */}
-          <Card>
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Relevant Exams & Certifications
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {selectedRoleData.salaryRange && (
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-sm text-gray-600 mb-1">Government Exams</p>
-                  <p className="font-bold text-purple-900">
-                    GATE, UPSC, Banking Exams
-                  </p>
-                </div>
-              )}
-              <div className="p-4 bg-pink-50 rounded-lg border border-pink-200">
-                <p className="text-sm text-gray-600 mb-1">Industry Certifications</p>
-                <p className="font-bold text-pink-900">
-                  AWS, GCP, Specialized Certs
-                </p>
+          <Card className="bg-[#12122B] text-white border-white/10">
+            <div className="flex items-center gap-2 mb-2 text-[#F5A623]">
+              <Sparkles size={18} />
+              <h4 className="text-sm font-display font-bold text-white uppercase tracking-wider">
+                AI Guidance Tip
+              </h4>
+            </div>
+            <p className="text-xs font-body text-gray-300 leading-relaxed">
+              Focus primarily on completing <strong>Year 0{activeStationYear}</strong> milestones.
+              Consistent daily practice on core skills and 1 real project per semester delivers the highest placement probability in India.
+            </p>
+          </Card>
+        </div>
+      </div>
+
+      {/* Role Picker Modal */}
+      {pickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#12122B]/60 backdrop-blur-xs" onClick={() => setPickerOpen(false)} />
+          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden z-10">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-xl font-display font-bold text-[#12122B]">
+                Select Destination Role
+              </h3>
+              <button onClick={() => setPickerOpen(false)} className="p-2 rounded-xl hover:bg-gray-100">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-3 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search role or domain..."
+                  value={roleQuery}
+                  onChange={(e) => setRoleQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] text-sm"
+                />
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {filteredRoles.map((role) => (
+                  <button
+                    key={role.id}
+                    onClick={() => {
+                      setSelectedRole(role.id);
+                      setPickerOpen(false);
+                    }}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
+                      selectedRole === role.id
+                        ? "bg-[#4F46E5] text-white border-[#4F46E5]"
+                        : "bg-[#FAFAF7] hover:bg-gray-100 border-gray-200 text-[#12122B]"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-display font-bold">{role.name}</p>
+                      <p className={`text-xs ${selectedRole === role.id ? "text-white/80" : "text-[#6B7280]"}`}>
+                        {role.category} · {role.salaryRange}
+                      </p>
+                    </div>
+                    <ArrowRight size={16} />
+                  </button>
+                ))}
               </div>
             </div>
-          </Card>
-
-          {/* CTA */}
-          <div className="text-center">
-            <Button className="px-8 py-3 text-lg" onClick={() => setJourneyOpen(true)}>
-              Start Your Journey
-            </Button>
           </div>
         </div>
       )}
 
-      {/* Start Journey Modal */}
+      {/* Personalize Journey Modal */}
       {journeyOpen && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center px-4">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setJourneyOpen(false)}
-          />
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl ring-1 ring-black/5 overflow-hidden animate-slide-in">
-            <div className="flex items-start justify-between p-6 border-b">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-[#12122B]/60 backdrop-blur-xs" onClick={() => setJourneyOpen(false)} />
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden z-10 max-h-[90vh] flex flex-col">
+            <div className="p-6 bg-[#12122B] text-white flex items-center justify-between border-b border-white/10">
               <div>
-                <h2 className="text-xl font-extrabold text-gray-900 flex items-center gap-2">
-                  <Sparkles size={20} className="text-indigo-600" />
-                  Personalize your roadmap
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Tell us what you already know — CareerVerse will tailor the plan.
-                </p>
+                <span className="text-[10px] font-data font-bold text-[#F5A623] uppercase">
+                  CUSTOM TRANSIT CALIBRATION
+                </span>
+                <h3 className="text-xl font-display font-bold text-white">
+                  Personalize Your Roadmap
+                </h3>
               </div>
-              <button
-                onClick={() => setJourneyOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition"
-                aria-label="Close"
-              >
-                <X />
+              <button onClick={() => setJourneyOpen(false)} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white">
+                <X size={18} />
               </button>
             </div>
 
-            <div className="p-6 space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {(["Beginner", "Intermediate", "Experienced"] as ExperienceLevel[]).map((lvl) => (
-                  <button
-                    key={lvl}
-                    onClick={() => setExperienceLevel(lvl)}
-                    className={`px-4 py-3 rounded-2xl border text-left transition ${
-                      experienceLevel === lvl
-                        ? "bg-indigo-600 text-white border-indigo-600"
-                        : "bg-white hover:bg-gray-50"
-                    }`}
-                  >
-                    <div className="font-bold">{lvl}</div>
-                    <div
-                      className={`text-xs ${
-                        experienceLevel === lvl ? "text-white/90" : "text-gray-600"
+            <div className="p-6 space-y-5 overflow-y-auto">
+              <div>
+                <label className="text-xs font-data font-bold text-[#6B7280] uppercase block mb-2">
+                  Experience Tier
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(["Beginner", "Intermediate", "Experienced"] as ExperienceLevel[]).map((lvl) => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setExperienceLevel(lvl)}
+                      className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
+                        experienceLevel === lvl
+                          ? "bg-[#4F46E5] text-white border-[#4F46E5] shadow-xs font-bold"
+                          : "bg-[#FAFAF7] border-gray-200 text-[#12122B] hover:border-gray-300"
                       }`}
                     >
-                      {lvl === "Beginner"
-                        ? "I’m starting fresh"
-                        : lvl === "Intermediate"
-                        ? "I know basics + some projects"
-                        : "I have strong experience"}
-                    </div>
-                  </button>
-                ))}
+                      <div className="text-sm font-display">{lvl}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border p-4">
-                  <div className="text-sm font-bold text-gray-900 mb-2">Timeline (years)</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-data font-bold text-[#6B7280] uppercase block mb-1.5">
+                    Duration (Years)
+                  </label>
                   <input
                     type="number"
                     min={1}
                     max={6}
                     value={years}
                     onChange={(e) => setYears(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] text-sm font-data"
                   />
-                  <div className="mt-2 text-xs text-gray-500">1–6 years recommended.</div>
                 </div>
-                <div className="rounded-2xl border p-4">
-                  <div className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                    <Clock size={16} className="text-indigo-600" />
-                    Hours per week
-                  </div>
+                <div>
+                  <label className="text-xs font-data font-bold text-[#6B7280] uppercase block mb-1.5">
+                    Hours / Week
+                  </label>
                   <input
                     type="number"
                     min={1}
-                    max={40}
+                    max={50}
                     value={hoursPerWeek}
                     onChange={(e) => setHoursPerWeek(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] text-sm font-data"
                   />
-                  <div className="mt-2 text-xs text-gray-500">Helps tailor intensity.</div>
                 </div>
-              </div>
-
-              <div className="rounded-2xl border p-4 bg-gray-50">
-                <div className="text-sm font-bold text-gray-900 mb-2">
-                  Known skills (auto-filled from Skill Gap)
-                </div>
-                {knownSkills.length === 0 ? (
-                  <div className="text-sm text-gray-600">
-                    No saved skills yet. Add skills in Skill Gap Analyzer for best results.
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {knownSkills.map((s) => (
-                      <span
-                        key={s}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white ring-1 ring-gray-200 text-sm"
-                      >
-                        {s}
-                        <button
-                          onClick={() => setKnownSkills(knownSkills.filter((x) => x !== s))}
-                          className="text-gray-400 hover:text-gray-700"
-                          aria-label="Remove skill"
-                        >
-                          <X size={14} />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
-            <div className="p-6 pt-0 flex flex-col sm:flex-row gap-3 sm:justify-end">
+            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
               <Button variant="outline" onClick={() => setJourneyOpen(false)}>
                 Cancel
               </Button>
               <Button
-                disabled={!user || saving}
+                disabled={saving}
                 onClick={async () => {
-                  if (!user) return;
+                  if (!user) {
+                    setJourneyOpen(false);
+                    return;
+                  }
                   const plan = generatePersonalRoadmap({
                     roleId: selectedRole,
                     years,
@@ -449,8 +414,9 @@ export const RoadmapPage: React.FC = () => {
                     knownSkills,
                   });
                   if (!plan) return;
-                  setSaving(true);
+
                   try {
+                    setSaving(true);
                     await firestoreService.saveRoadmapData(user.uid, {
                       roleId: selectedRole,
                       experienceLevel,
@@ -461,12 +427,14 @@ export const RoadmapPage: React.FC = () => {
                       createdAt: new Date(),
                     });
                     setJourneyOpen(false);
+                  } catch (e) {
+                    console.error("Failed to save roadmap:", e);
                   } finally {
                     setSaving(false);
                   }
                 }}
               >
-                {saving ? "Saving..." : "Generate & Save"}
+                {saving ? "Saving Route..." : "Generate Custom Route"}
               </Button>
             </div>
           </div>
