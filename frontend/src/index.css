@@ -189,3 +189,26 @@ textarea:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* Custom Smooth Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(18, 18, 43, 0.04);
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(79, 70, 229, 0.25);
+  border-radius: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 70, 229, 0.5);
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79, 70, 229, 0.25) rgba(18, 18, 43, 0.04);
+}
+
+

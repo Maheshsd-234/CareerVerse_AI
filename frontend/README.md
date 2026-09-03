@@ -1,60 +1,25 @@
-# CareerVerse AI - Career Guidance Platform
+# 💻 CareerVerse AI Frontend
 
-A production-ready web application that provides AI-powered career guidance to Indian students, helping them discover the perfect career path based on their skills and interests.
+React 19 + TypeScript + Vite single-page application for the **CareerVerse AI** career guidance, assessment, and real-time live employment platform.
 
-![React](https://img.shields.io/badge/React-19-blue?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-4-blue?logo=tailwindcss)
-![Firebase](https://img.shields.io/badge/Firebase-v12-orange?logo=firebase)
-![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite)
+---
 
-## 🚀 Features
+## 🌟 Included Capabilities & Stations
 
-### Core Features
-- ✅ Email/Password Authentication with Firebase Auth
-- ✅ Interactive Dashboard with personalized recommendations & progress tracking
-- ✅ Career Navigator for 10th, 12th (Science/Commerce/Arts), Diploma & Degree paths
-- ✅ Role Explorer covering Tech, Business, and Creative career profiles
-- ✅ Skill Gap Analyzer with match percentage algorithms and tailored learning suggestions
-- ✅ Dynamic Career Roadmap Generator with multi-year milestones
-- ✅ MCQ Aptitude & Interest Assessment evaluated by Gemini AI
-- ✅ Real-time AI Career Counselor Chatbot powered by Google Gemini
-- ✅ Trending Careers display with industry demand insights and salary projections
-- ✅ Real-time Cloud Firestore synchronization
-- ✅ Fully responsive SaaS UI optimized for mobile, tablet, and desktop
+- 🧭 **Station 01 · Compass Dashboard**: Personalized route tracking, academic stage selection, and stage-specific guidance.
+- 🎓 **Station 02 · Indian Education Route**: Stream selection engine for Class 10 & 12 / PUC (Science MPC/BiPC, Commerce, Arts, Polytechnic, ITI).
+- 🏛️ **Station 03 · College & Degree Navigator**: College pathways (B.Tech, B.Sc, BCA, B.Com, BBA, MBBS, Law) and entrance exams (JEE, NEET, CUET, KCET, GATE, CAT).
+- 🗺️ **Station 04 · AI Dynamic Roadmaps**: 4-year semester-wise milestones, required tech stacks, open-source projects, and recognized certifications.
+- 🔎 **Station 05 · Role Explorer**: 20+ career profiles (AI Engineer, Full Stack Developer, Data Analyst, Cloud Architect, etc.) with real-world Indian salary benchmarks (LPA).
+- ⚡ **Station 06 · Skill Gap Analyzer**: Match percentage calculation against target job descriptions with custom bridge plans.
+- 📝 **Station 07 · AI Aptitude & Technical Assessment**: Adaptive MCQ assessments evaluated by AI with scoring breakdown and weak-area diagnostics.
+- 🤖 **Station 08 · 24/7 AI Career Counselor**: Ultra-fast LLM counseling with Groq Llama 3.3 70B & Gemini 2.5 Flash, synced with Firebase Firestore.
+- 📡 **Station 09 · Live Indian Job Radar**: 100% real-time Adzuna India vacancy feed with tech hub filtering (Bengaluru, Hyderabad, Pune, Mumbai, Delhi NCR, Chennai, Remote), strict internship locking, company logo resolution, and in-memory query caching.
 
-## 🛠️ Tech Stack
+---
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS v4, Vite
-- **Authentication & Database**: Firebase v12 (Modular SDK - Auth + Firestore)
-- **AI Engine**: Google Generative AI (Gemini 2.5 Flash / Flash Lite)
-- **Routing**: React Router DOM v7
-- **UI & Icons**: Lucide React, Sonner (Toasts)
+## 🛠️ Environment Configuration (`.env`)
 
-## 📋 Prerequisites
-
-- Node.js 18+
-- Firebase Project with Auth and Firestore enabled
-- Google Gemini API Key from Google AI Studio
-
-## 🔧 Quick Start
-
-### 1. Install Dependencies
-```bash
-npm install
-```
-
-### 2. Setup Firebase
-1. Create a project at [firebase.google.com](https://firebase.google.com)
-2. Enable **Email/Password** authentication under *Authentication > Sign-in method*
-3. Create a **Firestore Database** in test or production mode
-4. Copy your web app configuration credentials
-
-### 3. Get Gemini API Key
-Visit [Google AI Studio](https://aistudio.google.com/) to generate an API key.
-
-### 4. Configure Environment
-Create a `.env` or `.env.local` file in the `frontend` root:
 ```env
 # Firebase Configuration
 VITE_FIREBASE_API_KEY=your_firebase_api_key
@@ -64,98 +29,29 @@ VITE_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 
-# Google Gemini API
+# AI Providers
+VITE_GROQ_API_KEY=your_groq_api_key
 VITE_GEMINI_API_KEY=your_gemini_api_key
-VITE_GEMINI_MODEL=gemini-2.5-flash-lite
+VITE_GEMINI_MODEL=gemini-2.5-flash
+
+# Adzuna Developer API (Live Jobs)
+VITE_ADZUNA_APP_ID=your_adzuna_app_id
+VITE_ADZUNA_APP_KEY=your_adzuna_app_key
 ```
 
-### 5. Run Development Server
+---
+
+## 🚀 Running Locally
+
 ```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-```
 
-The application will be accessible at `http://localhost:5173`.
-
-## 📁 Project Structure
-
-```
-src/
-├── components/         # Reusable UI, layout (Navbar, Sidebar), and chat components
-│   ├── chatbot/        # AI chat interface & floating widgets
-│   ├── layout/         # Header navigation and persistent sidebar
-│   └── ui/             # Reusable UI primitives
-├── pages/              # View pages
-│   ├── assistant/      # DashboardPage, ChatbotPage
-│   ├── auth/           # LoginPage, RegisterPage, ProtectedRoute
-│   └── career/         # AssessmentPage, CareerNavigatorPage, RoadmapPage,
-│                       # RoleExplorerPage, SkillGapPage, TrendingPage
-├── services/           # External API & service integrations
-│   ├── authService.ts      # Firebase Auth login/signup/logout
-│   ├── firestoreService.ts # User profile, assessments, and chat history sync
-│   └── geminiService.ts    # AI prompt engineering & Gemini API integration
-├── hooks/              # Custom React hooks (useAuth)
-├── firebase/           # Firebase initialization & SDK configuration
-├── data/               # Static datasets (career paths, roles, skills, questions)
-├── types/              # TypeScript interface definitions
-└── utils/              # Helper utilities
-```
-
-## 🎯 Career Paths & Roles Covered
-
-- **After 10th**: Science | Commerce | Arts | Polytechnic / ITI
-- **After 12th (Science)**: CSE, AI/ML, Data Science, ECE, Mechanical, Civil, Medical
-- **After 12th (Commerce)**: B.Com, CA, Banking, BBA, Financial Analysis
-- **After 12th (Arts/Humanities)**: Law (BA LLB), Civil Services (UPSC), Journalism, Design
-- **Professional Careers**: AI Engineer, Full Stack Developer, Data Scientist, Cloud Architect, Cybersecurity Analyst, Chartered Accountant, Product Manager, UI/UX Designer, and more.
-
-## 📊 Database Schema (Firestore)
-
-### Users (`users/{uid}`)
-```json
-{
-  "email": "student@example.com",
-  "displayName": "Student Name",
-  "skills": ["JavaScript", "Python"],
-  "selectedCareer": "AI Engineer",
-  "assessmentScore": 85,
-  "createdAt": "Timestamp"
-}
-```
-
-### Assessments (`users/{uid}/assessments/{assessmentId}`)
-```json
-{
-  "score": 85,
-  "recommendedCareer": "AI Engineer",
-  "categories": { "tech": 90, "business": 70, "creative": 65 },
-  "completedAt": "Timestamp"
-}
-```
-
-## 🚀 Build & Deployment
-
-To create an optimized production build:
-```bash
+# Build for production
 npm run build
 ```
 
-To preview the production build locally:
-```bash
-npm run preview
-```
-
-Deployable to Firebase Hosting, Vercel, Netlify, or AWS Amplify.
-
-## 🐛 Troubleshooting
-
-**Firebase Error?**
-- Check your `.env` configuration keys.
-- Verify that Email/Password auth and Firestore are enabled in the Firebase Console.
-
-**Gemini API Error?**
-- Verify your API key at [Google AI Studio](https://aistudio.google.com/).
-- Check model quotas and network access.
-
-## 📄 License
-
-MIT License - Built with ❤️ for Indian Students 🎯
+The app runs locally on `http://localhost:5173`.

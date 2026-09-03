@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { TrendingUp, Zap, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
 import { Card, Badge, Button } from "../../components/ui/UI";
 import { roles, trendingRoles } from "../../data/roles";
-import { geminiService } from "../../services/geminiService";
+import { groqService } from "../../services/groqService";
 import { useNavigate } from "react-router-dom";
 
 export const TrendingPage: React.FC = () => {
@@ -15,7 +15,7 @@ export const TrendingPage: React.FC = () => {
     void (async () => {
       try {
         setLoading(true);
-        const items = await geminiService.generateTrendingRoleIds("2025-2026");
+        const items = await groqService.generateTrendingRoleIds("2025-2026");
         if (!alive) return;
         setAiTrending(items);
       } catch (e) {

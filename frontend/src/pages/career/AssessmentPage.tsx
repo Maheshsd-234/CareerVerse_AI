@@ -156,7 +156,7 @@ export const AssessmentPage: React.FC = () => {
     return (
       <LoadingCard
         message="Plotting your aptitude route..."
-        subtext="Generating randomized reasoning questions with Google Gemini"
+        subtext="Generating randomized reasoning questions with AI"
       />
     );
   }

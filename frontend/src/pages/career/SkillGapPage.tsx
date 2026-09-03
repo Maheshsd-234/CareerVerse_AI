@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, Route, Sparkles, X, Check, ArrowRight, BarChart3 } from "lucide-react";
 import { Card, Badge, Button, ProgressBar } from "../../components/ui/UI";
 import { useAuth } from "../../hooks/useAuth";
@@ -8,10 +9,12 @@ import { firestoreService } from "../../services/firestoreService";
 import { useSkillGap } from "../../hooks/useSkillGap";
 
 export const SkillGapPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const roleFromUrl = searchParams.get("role");
   const { user, appUser } = useAuth();
   const [userSkills, setUserSkills] = useState<string[]>(appUser?.skills || []);
   const [selectedRole, setSelectedRole] = useState<string>(
-    appUser?.selectedCareer || roles[0].id
+    roleFromUrl || appUser?.selectedCareer || roles[0].id
   );
   const [isSaving, setIsSaving] = useState(false);
   const [customSkillInput, setCustomSkillInput] = useState("");

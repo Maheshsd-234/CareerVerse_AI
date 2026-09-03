@@ -81,7 +81,7 @@ export const DashboardPage: React.FC = () => {
                 Welcome back, {displayName}
               </h1>
               <p className="text-sm sm:text-base font-body text-gray-300 mt-2 max-w-2xl">
-                Track your real-time progress along the India education and career transit line.
+                Track your real-time progress along the Indian education and career transit line.
               </p>
             </div>
 
@@ -256,7 +256,7 @@ export const DashboardPage: React.FC = () => {
                 : "Complete assessment to unlock personalized career paths."}
             </p>
             <p className="text-xs font-body text-[#6B7280]">
-              Step-by-step milestones curated by Gemini AI for Indian universities & companies.
+              Step-by-step milestones curated by AI for Indian universities & companies.
             </p>
           </div>
 
@@ -341,7 +341,7 @@ export const DashboardPage: React.FC = () => {
             { label: "Career Navigator", desc: "10th, 12th & Degree", icon: Compass, path: "/career-navigator" },
             { label: "Role Explorer", desc: "10+ In-Depth Profiles", icon: BarChart3, path: "/role-explorer" },
             { label: "Dynamic Roadmap", desc: "3-4 Year Progression", icon: MapPin, path: "/roadmap" },
-            { label: "AI Counselor", desc: "24/7 Gemini Guidance", icon: Zap, path: "/chatbot" },
+            { label: "AI Counselor", desc: "24/7 AI Guidance", icon: Zap, path: "/chatbot" },
           ].map((action) => {
             const Icon = action.icon;
             return (

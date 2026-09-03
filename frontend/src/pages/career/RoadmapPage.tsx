@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CheckCircle, Clock, Search, Sparkles, X, MapPin, ArrowRight, Layers } from "lucide-react";
 import { Card, Badge, Button } from "../../components/ui/UI";
 import { roles } from "../../data/roles";
@@ -38,24 +39,27 @@ const generatePersonalRoadmap = (params: {
       "Ship small end-to-end projects to validate learning",
     ],
     Intermediate: [
-      "Deepen system architecture and design principles",
-      "Build production-grade capstone projects with real datasets",
-      "Contribute to open source and start targeted internship applications",
+      "Design modular systems and integrate third-party APIs",
+      "Lead feature delivery and optimize performance metrics",
+      "Implement automated testing and observability",
     ],
     Experienced: [
-      "Focus on specialization, high scalability, and reliability",
-      "Lead complex technical designs and system optimizations",
-      "Prepare for senior-level interview rounds and portfolio presentations",
+      "Architect resilient, distributed production systems",
+      "Drive technical strategy and mentor cross-functional teams",
+      "Lead security, scaling, and high-availability initiatives",
     ],
   };
 
   const plan: Record<string, YearPlan> = {};
-  const perYear = Math.max(1, Math.ceil(missingSkills.length / years));
-
   for (let i = 1; i <= years; i++) {
-    const yearKey = `year${i}`;
-    const skillsForYear = missingSkills.slice((i - 1) * perYear, i * perYear);
-    const genericFocus = role.requiredSkills.slice(0, Math.min(role.requiredSkills.length, i * 2));
+    const yearKey = `Year ${i}`;
+    const skillsForYear = missingSkills.slice((i - 1) * 3, i * 3);
+    const genericFocus = [
+      "Core Foundations & Syntax",
+      "Clean Architecture & Design Patterns",
+      "Testing, CI/CD & Deployment",
+      "Scalability & Performance Profiling",
+    ];
 
     const milestones = [
       ...baseMilestones[experienceLevel],
@@ -85,8 +89,12 @@ const generatePersonalRoadmap = (params: {
 };
 
 export const RoadmapPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const roleFromUrl = searchParams.get("role");
   const { user, appUser } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<string>(roles[0].id);
+  const [selectedRole, setSelectedRole] = useState<string>(
+    roleFromUrl || appUser?.selectedCareer || roles[0].id
+  );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [roleQuery, setRoleQuery] = useState("");
 

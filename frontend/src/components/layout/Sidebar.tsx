@@ -9,6 +9,7 @@ import {
   MapPin,
   PenTool,
   MessageSquare,
+  Briefcase,
   Menu,
   X,
 } from "lucide-react";
@@ -22,6 +23,7 @@ const sidebarItems = [
   { icon: PenTool, label: "Assessment", path: "/assessment", stationCode: "06" },
   { icon: MessageSquare, label: "AI Counselor", path: "/chatbot", stationCode: "07" },
   { icon: TrendingUp, label: "Market Trends", path: "/trending", stationCode: "08" },
+  { icon: Briefcase, label: "Live Jobs", path: "/live-jobs", stationCode: "09" },
 ];
 
 export const Sidebar: React.FC = () => {
@@ -95,7 +97,7 @@ export const Sidebar: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-[#14B8A6] animate-pulse" />
             <div className="text-xs font-data">
               <p className="font-bold text-[#12122B] leading-none">Metro Line 01</p>
-              <p className="text-[11px] text-[#6B7280] mt-0.5">India Education Route</p>
+              <p className="text-[11px] text-[#6B7280] mt-0.5">Indian Education Route</p>
             </div>
           </div>
         </div>

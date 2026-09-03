@@ -20,33 +20,43 @@ type StoredChatSession = {
   updatedAt: string;
 };
 
+const parseDateSafely = (value: unknown): Date => {
+  if (value instanceof Date && !isNaN(value.getTime())) return value;
+  if (!value) return new Date();
+  if (typeof (value as { toDate?: () => Date }).toDate === "function") {
+    try {
+      const d = (value as { toDate: () => Date }).toDate();
+      if (!isNaN(d.getTime())) return d;
+    } catch {}
+  }
+  if (typeof (value as { seconds?: number }).seconds === "number") {
+    return new Date((value as { seconds: number }).seconds * 1000);
+  }
+  const d = new Date(String(value));
+  return isNaN(d.getTime()) ? new Date() : d;
+};
+
 const serializeSession = (session: ChatSession): StoredChatSession => ({
   id: session.id,
   title: session.title,
   messages: serializeChatMessages(session.messages),
-  createdAt:
-    session.createdAt instanceof Date
-      ? session.createdAt.toISOString()
-      : String(session.createdAt),
-  updatedAt:
-    session.updatedAt instanceof Date
-      ? session.updatedAt.toISOString()
-      : String(session.updatedAt),
+  createdAt: parseDateSafely(session.createdAt).toISOString(),
+  updatedAt: parseDateSafely(session.updatedAt).toISOString(),
 });
 
-const parseSession = (raw: StoredChatSession): ChatSession => ({
-  id: String(raw.id),
+const parseSession = (raw: StoredChatSession | Record<string, unknown>): ChatSession => ({
+  id: String(raw.id || crypto.randomUUID()),
   title: String(raw.title ?? "Chat"),
   messages: parseChatMessages(raw.messages as unknown[]),
-  createdAt: new Date(String(raw.createdAt ?? Date.now())),
-  updatedAt: new Date(String(raw.updatedAt ?? Date.now())),
+  createdAt: parseDateSafely(raw.createdAt),
+  updatedAt: parseDateSafely(raw.updatedAt),
 });
 
 const readLocalSessions = (uid: string): ChatSession[] => {
   try {
     const raw = localStorage.getItem(chatHistoryLocalKey(uid));
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as StoredChatSession[];
+    const parsed = JSON.parse(raw) as (StoredChatSession | Record<string, unknown>)[];
     return parsed
       .map(parseSession)
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
@@ -55,9 +65,13 @@ const readLocalSessions = (uid: string): ChatSession[] => {
   }
 };
 
-const writeLocalSessions = (uid: string, sessions: StoredChatSession[]) => {
+const writeLocalSessions = (uid: string, sessions: (StoredChatSession | ChatSession)[]) => {
   try {
-    localStorage.setItem(chatHistoryLocalKey(uid), JSON.stringify(sessions));
+    const serialized = sessions.map((s) => ("messages" in s && Array.isArray(s.messages) && typeof s.messages[0]?.timestamp === "object" && s.messages[0]?.timestamp instanceof Date)
+      ? serializeSession(s as ChatSession)
+      : (s as StoredChatSession)
+    );
+    localStorage.setItem(chatHistoryLocalKey(uid), JSON.stringify(serialized));
   } catch {
     // ignore quota errors
   }
@@ -170,6 +184,10 @@ export const firestoreService = {
     }
   },
 
+  getLocalSessions: (uid: string): ChatSession[] => {
+    return readLocalSessions(uid);
+  },
+
   listChatSessions: async (uid: string): Promise<ChatSession[]> => {
     try {
       const snap = await getDoc(doc(db, "users", uid, "data", "chatHistory"));
@@ -182,6 +200,44 @@ export const firestoreService = {
       console.warn("Firestore list failed, using local cache:", error);
     }
     return readLocalSessions(uid);
+  },
+
+  // Delete a specific chat session
+  deleteChatSession: async (uid: string, sessionId: string) => {
+    const historyRef = doc(db, "users", uid, "data", "chatHistory");
+    const local = readLocalSessions(uid).filter((s) => s.id !== sessionId);
+    writeLocalSessions(uid, local.map(serializeSession));
+
+    try {
+      const snap = await getDoc(historyRef);
+      if (snap.exists()) {
+        const existing = (snap.data().sessions as StoredChatSession[]) || [];
+        const updated = existing.filter((s) => s.id !== sessionId);
+        await setDoc(
+          historyRef,
+          { sessions: updated, lastUpdated: new Date().toISOString() },
+          { merge: true }
+        );
+      }
+    } catch (error) {
+      console.error("Firestore delete failed; removed from local copy:", error);
+    }
+  },
+
+  // Clear all chat sessions
+  clearAllChatSessions: async (uid: string) => {
+    const historyRef = doc(db, "users", uid, "data", "chatHistory");
+    writeLocalSessions(uid, []);
+
+    try {
+      await setDoc(
+        historyRef,
+        { sessions: [], lastUpdated: new Date().toISOString() },
+        { merge: true }
+      );
+    } catch (error) {
+      console.error("Firestore clear failed; cleared local copy:", error);
+    }
   },
 
   /** One-time migration from legacy single-chat document */

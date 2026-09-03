@@ -15,6 +15,7 @@ import { RoadmapPage } from "./pages/career/RoadmapPage";
 import { AssessmentPage } from "./pages/career/AssessmentPage";
 import { ChatbotPage } from "./pages/assistant/ChatbotPage";
 import { TrendingPage } from "./pages/career/TrendingPage";
+import { LiveJobsPage } from "./pages/career/LiveJobsPage";
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -67,6 +68,7 @@ const AppRoutes: React.FC = () => {
                       <Route path="/assessment" element={<AssessmentPage />} />
                       <Route path="/chatbot" element={<ChatbotPage />} />
                       <Route path="/trending" element={<TrendingPage />} />
+                      <Route path="/live-jobs" element={<LiveJobsPage />} />
                       <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                   </div>
