@@ -15,14 +15,12 @@ import {
   Hourglass,
 } from "lucide-react";
 import type { RoadmapPhase, RoadmapWeek, RoadmapTask } from "../../types/roadmapEngine.types";
-import { TaskCard } from "./TaskCard";
-import { Button } from "../ui/UI";
 
 interface CurrentWeekFocusProps {
   currentPhase: RoadmapPhase;
   currentWeek: RoadmapWeek;
-  onOpenDetail: (task: RoadmapTask) => void;
-  onToggleComplete: (task: RoadmapTask, e: React.MouseEvent) => void;
+  onOpenDetail?: (task: RoadmapTask) => void;
+  onToggleComplete?: (task: RoadmapTask, e: React.MouseEvent) => void;
   onSelectWeek: (weekNumber: number) => void;
   totalWeeks: number;
   onBlockedNextWeek?: (currentWeekNumber: number, incompleteCount: number, assessmentBlocked?: boolean) => void;
@@ -41,9 +39,6 @@ export const CurrentWeekFocus: React.FC<CurrentWeekFocusProps> = ({
   onViewCompleteFlow,
   onOpenAssessment,
 }) => {
-  const completedTasks = currentWeek.tasks.filter((t) => t.status === "completed").length;
-  const nextAvailableTask = currentWeek.tasks.find((t) => t.status === "available" || t.status === "in_progress");
-
   const assessmentPassed = currentWeek.assessment_status === "passed";
   const assessmentFailed = currentWeek.assessment_status === "failed";
   const assessmentScore = currentWeek.assessment_score;
@@ -52,12 +47,11 @@ export const CurrentWeekFocus: React.FC<CurrentWeekFocusProps> = ({
 
   const handleNextWeekClick = () => {
     if (currentWeek.week_number >= totalWeeks) return;
-    const incompleteCount = currentWeek.tasks.length - completedTasks;
     
-    // Block if tasks incomplete OR assessment not passed
-    if (incompleteCount > 0 || !assessmentPassed) {
+    // Block if assessment not passed (75% = 12/15)
+    if (!assessmentPassed) {
       if (onBlockedNextWeek) {
-        onBlockedNextWeek(currentWeek.week_number, incompleteCount, !assessmentPassed);
+        onBlockedNextWeek(currentWeek.week_number, 0, true);
       }
       return;
     }
@@ -114,7 +108,7 @@ export const CurrentWeekFocus: React.FC<CurrentWeekFocusProps> = ({
               onClick={handleNextWeekClick}
               disabled={currentWeek.week_number >= totalWeeks}
               className={`px-3 py-1.5 rounded-xl text-xs font-mono border transition-all cursor-pointer ${
-                completedTasks === currentWeek.tasks.length && assessmentPassed
+                assessmentPassed
                   ? "bg-[#4F46E5] hover:bg-[#4338CA] text-white border-transparent shadow-md shadow-indigo-500/20"
                   : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
               } disabled:opacity-40 disabled:cursor-not-allowed`}
@@ -174,127 +168,140 @@ export const CurrentWeekFocus: React.FC<CurrentWeekFocusProps> = ({
           </div>
         </div>
 
-        {/* Progress & Next Task Prompt */}
+        {/* Weekly Completion Progress */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4">
           <div className="space-y-1.5 flex-1 max-w-md">
             <div className="flex items-center justify-between text-xs font-mono text-gray-300">
-              <span>Weekly Completion</span>
+              <span>Week {currentWeek.week_number} Progression</span>
               <span className="font-bold text-white">
-                {completedTasks} / {currentWeek.tasks.length} Tasks ({currentWeek.completion_percentage}%)
+                {assessmentPassed
+                  ? "100% · Week Completed & Verified"
+                  : assessmentFailed
+                  ? `Retest Required · Score: ${assessmentScore}/15`
+                  : "Assessment Required to Unlock Next Week"}
               </span>
             </div>
-            <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+            <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
               <div
-                className="bg-emerald-500 h-full rounded-full transition-all duration-300"
-                style={{ width: `${currentWeek.completion_percentage}%` }}
+                className={`h-full rounded-full transition-all duration-500 ${
+                  assessmentPassed
+                    ? "bg-emerald-500 w-full"
+                    : assessmentFailed
+                    ? "bg-rose-500 w-[35%]"
+                    : "bg-indigo-500 w-[50%]"
+                }`}
               />
             </div>
           </div>
 
-          {nextAvailableTask && (
-            <Button
-              onClick={() => onOpenDetail(nextAvailableTask)}
-              className="bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold flex items-center gap-2 shadow-md cursor-pointer self-start sm:self-auto"
-            >
-              <span>Resume: {nextAvailableTask.title.slice(0, 32)}...</span>
-              <ArrowRight size={14} />
-            </Button>
-          )}
+          <button
+            onClick={() => onOpenAssessment?.(currentWeek)}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-md cursor-pointer transition-all self-start sm:self-auto ${
+              assessmentPassed
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30"
+                : "bg-[#4F46E5] hover:bg-[#4338CA] text-white"
+            }`}
+          >
+            <span>{assessmentPassed ? "Assessment Passed ✓" : "Launch Weekly Assessment"}</span>
+            <ArrowRight size={14} />
+          </button>
         </div>
       </div>
 
-      {/* Mandatory Weekly Assessment Card */}
+      {/* Mandatory Weekly Assessment Card (High Contrast, Solid Dark UI) */}
       <div
-        className={`p-6 rounded-3xl border transition-all ${
+        className={`p-6 sm:p-8 rounded-3xl border-2 transition-all shadow-2xl relative overflow-hidden ${
           assessmentPassed
-            ? "bg-emerald-950/20 border-emerald-500/30"
+            ? "bg-[#0d2818] border-emerald-500/60"
             : assessmentFailed
-            ? "bg-rose-950/20 border-rose-500/30"
-            : "bg-indigo-950/20 border-indigo-500/30"
+            ? "bg-[#2d0f14] border-rose-500/60"
+            : "bg-[#141432] border-indigo-500/50"
         }`}
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2">
+        {/* Glow accent */}
+        <div
+          className={`pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl opacity-30 ${
+            assessmentPassed
+              ? "bg-emerald-500"
+              : assessmentFailed
+              ? "bg-rose-500"
+              : "bg-indigo-500"
+          }`}
+        />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <span
-                className={`px-2.5 py-0.5 rounded-md text-xs font-mono font-bold uppercase ${
+                className={`px-3 py-1 rounded-md text-xs font-mono font-bold uppercase tracking-wider shadow-sm flex items-center gap-1.5 ${
                   assessmentPassed
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                    ? "bg-emerald-500 text-white"
                     : assessmentFailed
-                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                    : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                    ? "bg-rose-600 text-white"
+                    : "bg-[#4F46E5] text-white"
                 }`}
               >
-                {assessmentPassed
-                  ? `PASSED · ${assessmentScore}/${totalQuestions} (${Math.round(((assessmentScore || 0) / totalQuestions) * 100)}%)`
-                  : assessmentFailed
-                  ? `NOT PASSED · ${assessmentScore}/${totalQuestions} (Need ${passingScore}/${totalQuestions})`
-                  : "ASSESSMENT PENDING"}
+                {assessmentPassed ? (
+                  <>
+                    <CheckCircle2 size={13} />
+                    PASSED · {assessmentScore}/{totalQuestions} ({Math.round(((assessmentScore || 0) / totalQuestions) * 100)}%)
+                  </>
+                ) : assessmentFailed ? (
+                  <>
+                    <AlertCircle size={13} />
+                    NOT PASSED · {assessmentScore}/{totalQuestions} (Need {passingScore}/{totalQuestions})
+                  </>
+                ) : (
+                  <>
+                    <Hourglass size={13} />
+                    ASSESSMENT PENDING
+                  </>
+                )}
               </span>
-              <span className="text-xs font-mono text-gray-400">
+
+              <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-md bg-white/10 text-gray-200 border border-white/10">
                 15 MCQs · 75% ({passingScore}/15) to Unlock Next Week
               </span>
             </div>
 
-            <h3 className="text-lg font-display font-bold text-white flex items-center gap-2">
-              <FileCheck2 size={18} className="text-indigo-400" />
+            <h3 className="text-xl sm:text-2xl font-display font-bold text-white flex items-center gap-2.5">
+              <FileCheck2 size={24} className="text-indigo-400 shrink-0" />
               Week {currentWeek.week_number} Adaptive Assessment
             </h3>
 
-            <p className="text-xs text-gray-300 font-body max-w-2xl">
+            <p className="text-xs sm:text-sm text-gray-200 font-body leading-relaxed max-w-2xl">
               {assessmentPassed
-                ? "Congratulations! You have verified mastery for this week's topics. Next week is unlocked."
+                ? "Congratulations! You verified competency on this week's topics. Next week is unlocked and available."
                 : assessmentFailed
-                ? `You scored ${assessmentScore}/${totalQuestions}. A minimum of 75% (${passingScore}/${totalQuestions}) is required to unlock Week ${currentWeek.week_number + 1}. Retake the assessment to focus on weak topics.`
-                : "Dynamic 15-question evaluation synthesized from this week's learning objectives and topics using Groq AI. Passing unlocks the next week."}
+                ? `You scored ${assessmentScore}/${totalQuestions}. Minimum required is 75% (${passingScore}/${totalQuestions}) to advance. Click Retest to practice targeted questions on your weak topics.`
+                : "Mandatory weekly evaluation synthesized from this week's learning objectives and topics using Groq AI. Passing score of 75% (12/15) is required to unlock downstream weeks."}
             </p>
           </div>
 
-          <div className="shrink-0 flex items-center gap-2">
-            <Button
+          <div className="shrink-0 flex items-center gap-3">
+            <button
               onClick={() => onOpenAssessment?.(currentWeek)}
-              className={`px-4 py-2.5 text-xs font-semibold cursor-pointer shadow-md ${
+              className={`px-6 py-3.5 rounded-xl font-display font-bold text-sm text-white shadow-xl cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 ${
                 assessmentPassed
-                  ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                  ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/25"
                   : assessmentFailed
-                  ? "bg-rose-600 hover:bg-rose-500 text-white animate-pulse"
-                  : "bg-[#4F46E5] hover:bg-[#4338CA] text-white"
+                  ? "bg-rose-600 hover:bg-rose-500 shadow-rose-500/30 animate-pulse"
+                  : "bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 shadow-indigo-500/30"
               }`}
             >
-              <HelpCircle size={14} className="mr-1.5" />
-              {assessmentPassed
-                ? "Review / Retake Assessment"
-                : assessmentFailed
-                ? "Start Adaptive Retest"
-                : "Take Weekly Assessment"}
-            </Button>
+              <HelpCircle size={18} />
+              <span>
+                {assessmentPassed
+                  ? "Review / Retake Assessment"
+                  : assessmentFailed
+                  ? "Start Adaptive Retest Now"
+                  : "Take Weekly Assessment (15 Questions)"}
+              </span>
+            </button>
           </div>
-        </div>
-      </div>
-
-      {/* Week Task List */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-display font-bold text-white flex items-center gap-2">
-            <Layers size={16} className="text-indigo-400" />
-            Weekly Execution Tasks ({currentWeek.tasks.length})
-          </h3>
-          <span className="text-xs text-gray-400 font-mono">
-            Click task to view deep syllabus, quiz & practice
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3">
-          {currentWeek.tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onOpenDetail={onOpenDetail}
-              onToggleComplete={onToggleComplete}
-            />
-          ))}
         </div>
       </div>
     </div>
   );
 };
+
