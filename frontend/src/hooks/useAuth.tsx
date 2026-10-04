@@ -52,15 +52,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      const fbUser = await authService.login(email, password);
-      if (fbUser) {
-        const profile = await authService.getUserProfile(fbUser.uid);
-        setAppUser(profile);
-      }
-    } finally {
-      setLoading(false);
+    const fbUser = await authService.login(email, password);
+    if (fbUser) {
+      setUser(fbUser);
+      const profile = await authService.getUserProfile(fbUser.uid);
+      setAppUser(profile);
     }
   };
 
@@ -70,31 +66,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     displayName: string,
     currentStage?: string
   ) => {
-    setLoading(true);
-    try {
-      const fbUser = await authService.register(email, password, displayName, currentStage);
-      if (fbUser) {
-        if (currentStage) {
-          localStorage.setItem(`cv_user_stage_${fbUser.uid}`, currentStage);
-        }
-        const profile = await authService.getUserProfile(fbUser.uid);
-        if (profile) {
-          setAppUser(profile);
-        } else {
-          setAppUser({
-            uid: fbUser.uid,
-            email: fbUser.email || "",
-            displayName: displayName || fbUser.displayName || "Student",
-            currentStage: currentStage || "school",
-            createdAt: new Date(),
-            skills: [],
-            selectedCareer: null,
-            assessmentScore: null,
-          });
-        }
+    const fbUser = await authService.register(email, password, displayName, currentStage);
+    if (fbUser) {
+      setUser(fbUser);
+      if (currentStage) {
+        localStorage.setItem(`cv_user_stage_${fbUser.uid}`, currentStage);
       }
-    } finally {
-      setLoading(false);
+      const profile = await authService.getUserProfile(fbUser.uid);
+      if (profile) {
+        setAppUser(profile);
+      } else {
+        setAppUser({
+          uid: fbUser.uid,
+          email: fbUser.email || "",
+          displayName: displayName || fbUser.displayName || "Student",
+          currentStage: currentStage || "school",
+          createdAt: new Date(),
+          skills: [],
+          selectedCareer: null,
+          assessmentScore: null,
+        });
+      }
     }
   };
 

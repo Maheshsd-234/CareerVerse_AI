@@ -1,0 +1,287 @@
+{
+  "model_name": "CareerVerse XGBoost Multi-Role Engine (Versatile Industry Tracks)",
+  "dataset_source": "Synthesized Multi-Branch Indian Engineering Benchmarks (39,000+ Records)",
+  "total_records": 2000,
+  "validation_samples": 360,
+  "classes": [
+    "AI & Machine Learning Engineer",
+    "CAD/CAE Mechanical Systems Designer",
+    "Civil BIM & Structural Engineer",
+    "Cloud & DevOps Solutions Architect",
+    "Cybersecurity & Threat Defense Engineer",
+    "Data Scientist & Analytics Specialist",
+    "Embedded Systems & IoT Engineer",
+    "Full-Stack Software Engineer (SDE)",
+    "Robotics & Automation Specialist",
+    "Strategy & Management Consultant",
+    "Technical Product Manager (PM)"
+  ],
+  "overall_accuracy": 97.22,
+  "precision_weighted": 97.27,
+  "precision_macro": 97.63,
+  "recall_weighted": 97.22,
+  "f1_score": 97.02,
+  "confusion_matrix": [
+    [
+      63,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      9,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      13,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      50,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      24,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      125,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      26,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      1,
+      1,
+      1,
+      7,
+      0
+    ],
+    [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      13
+    ]
+  ],
+  "per_class_metrics": {
+    "AI & Machine Learning Engineer": {
+      "precision": 98.4,
+      "recall": 100.0,
+      "f1_score": 99.2,
+      "support": 63
+    },
+    "CAD/CAE Mechanical Systems Designer": {
+      "precision": 100.0,
+      "recall": 90.0,
+      "f1_score": 94.7,
+      "support": 10
+    },
+    "Civil BIM & Structural Engineer": {
+      "precision": 100.0,
+      "recall": 100.0,
+      "f1_score": 100.0,
+      "support": 13
+    },
+    "Cloud & DevOps Solutions Architect": {
+      "precision": 100.0,
+      "recall": 100.0,
+      "f1_score": 100.0,
+      "support": 3
+    },
+    "Cybersecurity & Threat Defense Engineer": {
+      "precision": 100.0,
+      "recall": 100.0,
+      "f1_score": 100.0,
+      "support": 17
+    },
+    "Data Scientist & Analytics Specialist": {
+      "precision": 96.2,
+      "recall": 100.0,
+      "f1_score": 98.0,
+      "support": 50
+    },
+    "Embedded Systems & IoT Engineer": {
+      "precision": 96.0,
+      "recall": 100.0,
+      "f1_score": 98.0,
+      "support": 24
+    },
+    "Full-Stack Software Engineer (SDE)": {
+      "precision": 97.7,
+      "recall": 99.2,
+      "f1_score": 98.4,
+      "support": 126
+    },
+    "Robotics & Automation Specialist": {
+      "precision": 92.9,
+      "recall": 100.0,
+      "f1_score": 96.3,
+      "support": 26
+    },
+    "Strategy & Management Consultant": {
+      "precision": 100.0,
+      "recall": 58.3,
+      "f1_score": 73.7,
+      "support": 12
+    },
+    "Technical Product Manager (PM)": {
+      "precision": 92.9,
+      "recall": 81.2,
+      "f1_score": 86.7,
+      "support": 16
+    }
+  },
+  "top_features": [
+    {
+      "feature": "skill_cybersecurity",
+      "importance": 0.1384
+    },
+    {
+      "feature": "skill_web_development",
+      "importance": 0.115
+    },
+    {
+      "feature": "skill_machine_learning",
+      "importance": 0.0857
+    },
+    {
+      "feature": "skill_data_science",
+      "importance": 0.0793
+    },
+    {
+      "feature": "branch_CIVIL",
+      "importance": 0.071
+    },
+    {
+      "feature": "data_skill_density",
+      "importance": 0.0443
+    },
+    {
+      "feature": "branch_MECH",
+      "importance": 0.0406
+    },
+    {
+      "feature": "skill_python",
+      "importance": 0.0392
+    },
+    {
+      "feature": "skill_cloud_devops",
+      "importance": 0.0372
+    },
+    {
+      "feature": "skill_embedded_systems",
+      "importance": 0.0345
+    },
+    {
+      "feature": "club_robotics",
+      "importance": 0.0332
+    },
+    {
+      "feature": "skill_matlab",
+      "importance": 0.0267
+    }
+  ]
+}

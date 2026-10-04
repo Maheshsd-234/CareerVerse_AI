@@ -1,453 +1,490 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle, Clock, Search, Sparkles, X, MapPin, ArrowRight, Layers } from "lucide-react";
-import { Card, Badge, Button } from "../../components/ui/UI";
+import {
+  Sparkles,
+  MapPin,
+  Calendar,
+  Clock,
+  Layers,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Download,
+  Sliders,
+  Compass,
+  RefreshCw,
+  Award,
+} from "lucide-react";
+import { Button } from "../../components/ui/UI";
 import { roles } from "../../data/roles";
 import { useAuth } from "../../hooks/useAuth";
-import { firestoreService } from "../../services/firestoreService";
-import { VerticalRouteLine } from "../../components/ui/RouteLine";
-import type { RoadmapStationItem } from "../../components/ui/RouteLine";
+import { dynamicRoadmapService } from "../../services/dynamicRoadmapService";
+import type {
+  RoadmapPlan,
+  RoadmapTask,
+  RoadmapCreationParams,
+} from "../../types/roadmapEngine.types";
 
-type ExperienceLevel = "Beginner" | "Intermediate" | "Experienced";
-
-interface YearPlan {
-  title: string;
-  milestones: string[];
-  focusSkills: string[];
-}
-
-const generatePersonalRoadmap = (params: {
-  roleId: string;
-  years: number;
-  experienceLevel: ExperienceLevel;
-  hoursPerWeek: number;
-  knownSkills: string[];
-}) => {
-  const role = roles.find((r) => r.id === params.roleId);
-  if (!role) return null;
-
-  const { years, experienceLevel, knownSkills } = params;
-  const missingSkills = role.requiredSkills.filter((s) => !knownSkills.includes(s));
-
-  const intensityHint =
-    params.hoursPerWeek >= 12 ? "high" : params.hoursPerWeek >= 6 ? "medium" : "low";
-
-  const baseMilestones: Record<ExperienceLevel, string[]> = {
-    Beginner: [
-      "Master foundational concepts and domain syntax",
-      "Solve practical problem sets daily to build muscle memory",
-      "Ship small end-to-end projects to validate learning",
-    ],
-    Intermediate: [
-      "Design modular systems and integrate third-party APIs",
-      "Lead feature delivery and optimize performance metrics",
-      "Implement automated testing and observability",
-    ],
-    Experienced: [
-      "Architect resilient, distributed production systems",
-      "Drive technical strategy and mentor cross-functional teams",
-      "Lead security, scaling, and high-availability initiatives",
-    ],
-  };
-
-  const plan: Record<string, YearPlan> = {};
-  for (let i = 1; i <= years; i++) {
-    const yearKey = `Year ${i}`;
-    const skillsForYear = missingSkills.slice((i - 1) * 3, i * 3);
-    const genericFocus = [
-      "Core Foundations & Syntax",
-      "Clean Architecture & Design Patterns",
-      "Testing, CI/CD & Deployment",
-      "Scalability & Performance Profiling",
-    ];
-
-    const milestones = [
-      ...baseMilestones[experienceLevel],
-      ...(skillsForYear.length
-        ? [`Target competencies: ${skillsForYear.join(", ")}`]
-        : ["Consolidate advanced strengths and build industry-grade projects"]),
-      intensityHint === "high"
-        ? "Build 2–3 serious deployed applications + portfolio proof"
-        : intensityHint === "medium"
-        ? "Build 1–2 solid projects with clean architecture"
-        : "Build 1 focused project + consistent weekly milestones",
-    ];
-
-    plan[yearKey] = {
-      title:
-        i === 1
-          ? "Foundation & Core Principles"
-          : i === years
-          ? "Mastery & Placement Readiness"
-          : "System Design & Projects",
-      focusSkills: Array.from(new Set([...skillsForYear, ...genericFocus])).slice(0, 8),
-      milestones,
-    };
-  }
-
-  return plan;
-};
+import { RoadmapHeader } from "../../components/roadmap/RoadmapHeader";
+import { CurrentWeekFocus } from "../../components/roadmap/CurrentWeekFocus";
+import { RoadmapTimelineView } from "../../components/roadmap/RoadmapTimelineView";
+import { SkillGapPanel } from "../../components/roadmap/SkillGapPanel";
+import { SkillGraphView } from "../../components/roadmap/SkillGraphView";
+import { TaskDetailDrawer } from "../../components/roadmap/TaskDetailDrawer";
+import { WhatIfSimulator } from "../../components/roadmap/WhatIfSimulator";
+import { RoadmapCreationWizard } from "../../components/roadmap/RoadmapCreationWizard";
+import { AdaptiveNoticeBanner } from "../../components/roadmap/AdaptiveNoticeBanner";
+import { NaturalLanguageBar } from "../../components/roadmap/NaturalLanguageBar";
+import { BlockedWeekModal } from "../../components/roadmap/BlockedWeekModal";
+import { CompleteFlowPDFModal } from "../../components/roadmap/CompleteFlowPDFModal";
+import { WeeklyAssessmentModal } from "../../components/roadmap/WeeklyAssessmentModal";
+import type { RoadmapWeek, AssessmentSubmissionResult } from "../../types/roadmapEngine.types";
 
 export const RoadmapPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const roleFromUrl = searchParams.get("role");
   const { user, appUser } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<string>(
-    roleFromUrl || appUser?.selectedCareer || roles[0].id
-  );
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [roleQuery, setRoleQuery] = useState("");
 
-  const [journeyOpen, setJourneyOpen] = useState(false);
-  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>("Beginner");
-  const [years, setYears] = useState<number>(3);
-  const [hoursPerWeek, setHoursPerWeek] = useState<number>(6);
-  const [knownSkills, setKnownSkills] = useState<string[]>(appUser?.skills || []);
-  const [saving, setSaving] = useState(false);
-  const [activeStationYear, setActiveStationYear] = useState<number>(1);
+  const userId = user?.uid || appUser?.uid || "guest_user";
+  const preferredRoleId = roleFromUrl || appUser?.selectedCareer || "software-engineer";
 
-  const selectedRoleData = roles.find((r) => r.id === selectedRole);
+  // Core State
+  const [plan, setPlan] = useState<RoadmapPlan | null>(null);
+  const [activeWeekNumber, setActiveWeekNumber] = useState<number>(1);
+  const [activeView, setActiveView] = useState<"weekly" | "timeline" | "gaps" | "graph">("weekly");
+  const [selectedTaskForDetail, setSelectedTaskForDetail] = useState<RoadmapTask | null>(null);
 
-  const filteredRoles = useMemo(() => {
-    const q = roleQuery.trim().toLowerCase();
-    if (!q) return roles;
-    return roles.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.category.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q)
-    );
-  }, [roleQuery]);
+  // Modals & Panels
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState<boolean>(false);
+  const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
+  const [isBlockedModalOpen, setIsBlockedModalOpen] = useState<boolean>(false);
+  const [isCompleteFlowModalOpen, setIsCompleteFlowModalOpen] = useState<boolean>(false);
+  const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState<boolean>(false);
+  const [activeAssessmentWeek, setActiveAssessmentWeek] = useState<RoadmapWeek | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [copilotLoading, setCopilotLoading] = useState<boolean>(false);
 
-  const activePlan = useMemo(() => {
-    if (!selectedRoleData) return null;
+  // Load existing plan or initialize default
+  useEffect(() => {
+    let isCancelled = false;
 
-    return generatePersonalRoadmap({
-      roleId: selectedRole,
-      years,
-      experienceLevel,
-      hoursPerWeek,
+    const loadInitialPlan = async () => {
+      setIsLoading(true);
+      const existing = await dynamicRoadmapService.getActivePlan(userId);
+
+      if (!isCancelled) {
+        if (existing && (!roleFromUrl || existing.target_role_id === roleFromUrl)) {
+          setPlan(existing);
+          // Set active week to first non-completed week
+          const allWeeks = existing.phases.flatMap((p) => p.weeks);
+          const firstIncomplete = allWeeks.find((w) => w.completion_percentage < 100);
+          if (firstIncomplete) {
+            setActiveWeekNumber(firstIncomplete.week_number);
+          }
+        } else {
+          // Generate default personalized roadmap based on profile
+          const initialPlan = await dynamicRoadmapService.generatePlan({
+            userId,
+            targetRoleId: preferredRoleId,
+            experienceLevel: "Beginner",
+            weeklyHours: 10,
+            targetTimelineMonths: 6,
+            learningPreference: "Balanced",
+            goal: "First Job",
+            knownSkills: appUser?.skills || [],
+            assessmentScores: appUser?.assessmentScore ? { general: appUser.assessmentScore } : {},
+          });
+          if (!isCancelled) {
+            setPlan(initialPlan);
+          }
+        }
+        setIsLoading(false);
+      }
+    };
+
+    loadInitialPlan();
+    return () => {
+      isCancelled = true;
+    };
+  }, [userId, preferredRoleId, appUser]);
+
+  // Active Phase & Week based on activeWeekNumber
+  const { currentPhase, currentWeek } = useMemo(() => {
+    if (!plan) return { currentPhase: null, currentWeek: null };
+    for (const phase of plan.phases) {
+      const match = phase.weeks.find((w) => w.week_number === activeWeekNumber);
+      if (match) {
+        return { currentPhase: phase, currentWeek: match };
+      }
+    }
+    const defaultPhase = plan.phases[0] || null;
+    const defaultWeek = defaultPhase?.weeks[0] || null;
+    return { currentPhase: defaultPhase, currentWeek: defaultWeek };
+  }, [plan, activeWeekNumber]);
+
+  // Handle task complete toggle
+  const handleToggleComplete = async (task: RoadmapTask, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!plan || task.status === "locked") return;
+
+    const newStatus = task.status === "completed" ? "available" : "completed";
+    const updated = await dynamicRoadmapService.adaptPlan(plan, "task_completed", {
+      task_id: task.id,
+      status: newStatus,
+    });
+    setPlan(updated);
+
+    if (selectedTaskForDetail?.id === task.id) {
+      setSelectedTaskForDetail((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+  };
+
+  // Complete task from detail drawer
+  const handleCompleteTask = async (taskId: string, extra?: { github_url?: string; score?: number }) => {
+    if (!plan) return;
+    const updated = await dynamicRoadmapService.adaptPlan(plan, "task_completed", {
+      task_id: taskId,
+      ...extra,
+    });
+    setPlan(updated);
+
+    if (selectedTaskForDetail?.id === taskId) {
+      setSelectedTaskForDetail((prev) => (prev ? { ...prev, status: "completed", ...extra } : null));
+    }
+  };
+
+  // Handle quiz assessment submission from drawer
+  const handleAssessmentSubmit = async (taskId: string, skillId: string, score: number) => {
+    if (!plan) return;
+    const updated = await dynamicRoadmapService.adaptPlan(plan, "assessment_result", {
+      task_id: taskId,
+      skill_id: skillId,
+      score,
+    });
+    setPlan(updated);
+
+    if (selectedTaskForDetail?.id === taskId) {
+      setSelectedTaskForDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              last_score: score,
+              status: score >= 60 ? "completed" : "needs_review",
+            }
+          : null
+      );
+    }
+  };
+
+  // Apply What-If simulation parameters
+  const handleApplySimulator = async (
+    newWeeklyHours: number,
+    newTargetDate?: string,
+    newMvcpMode?: boolean
+  ) => {
+    if (!plan) return;
+    setIsLoading(true);
+    const updated = await dynamicRoadmapService.generatePlan({
+      userId,
+      targetRoleId: plan.target_role_id,
+      experienceLevel: plan.experience_level,
+      weeklyHours: newWeeklyHours,
+      targetDate: newTargetDate,
+      learningPreference: plan.learning_preference,
+      goal: plan.goal,
+      currentRole: plan.current_role,
       knownSkills: appUser?.skills || [],
+      mvcpMode: newMvcpMode !== undefined ? newMvcpMode : plan.mvcp_mode,
+      specialization: plan.specialization,
     });
-  }, [selectedRoleData, selectedRole, years, experienceLevel, hoursPerWeek, appUser?.skills]);
+    setPlan(updated);
+    setIsLoading(false);
+  };
 
-  // Convert activePlan into RoadmapStationItem array for VerticalRouteLine
-  const roadmapStationItems: RoadmapStationItem[] = useMemo(() => {
-    if (!activePlan) return [];
-    return Object.entries(activePlan).map(([yearKey, val], idx) => {
-      const planItem = val as YearPlan;
-      return {
-        id: yearKey,
-        yearLabel: `Year 0${idx + 1}`,
-        title: planItem.title,
-        milestones: planItem.milestones,
-        focusSkills: planItem.focusSkills || [],
-        status:
-          idx + 1 === activeStationYear
-            ? "current"
-            : idx + 1 < activeStationYear
-            ? "completed"
-            : "upcoming",
-      };
+  // Handle New Roadmap from Wizard
+  const handleCreateRoadmap = async (params: RoadmapCreationParams) => {
+    setIsLoading(true);
+    const newPlan = await dynamicRoadmapService.generatePlan({
+      ...params,
+      userId,
+      knownSkills: appUser?.skills || [],
+      assessmentScores: appUser?.assessmentScore ? { general: appUser.assessmentScore } : {},
     });
-  }, [activePlan, activeStationYear]);
+    setPlan(newPlan);
+    setActiveWeekNumber(1);
+    setIsLoading(false);
+  };
+
+  // Handle Natural Language Commands
+  const handleNaturalLanguageCommand = async (commandText: string) => {
+    if (!plan) return;
+    setCopilotLoading(true);
+    const interpretation = await dynamicRoadmapService.interpretCommand(commandText, plan);
+
+    if (interpretation.action === "update_weekly_hours") {
+      const newHours = Number(interpretation.value);
+      await handleApplySimulator(newHours);
+    } else if (interpretation.action === "toggle_mvcp") {
+      await handleApplySimulator(plan.weekly_hours, plan.target_date, true);
+    } else if (interpretation.action === "update_preference") {
+      const newPref = String(interpretation.value);
+      const updated = await dynamicRoadmapService.generatePlan({
+        userId,
+        targetRoleId: plan.target_role_id,
+        experienceLevel: plan.experience_level,
+        weeklyHours: plan.weekly_hours,
+        targetDate: plan.target_date,
+        learningPreference: newPref,
+        goal: plan.goal,
+        currentRole: plan.current_role,
+        knownSkills: appUser?.skills || [],
+        mvcpMode: plan.mvcp_mode,
+        specialization: plan.specialization,
+      });
+      setPlan(updated);
+    } else if (interpretation.action === "mark_skill_known") {
+      const skillToSkip = String(interpretation.value);
+      const currentKnown = [...(appUser?.skills || []), skillToSkip];
+      const updated = await dynamicRoadmapService.generatePlan({
+        userId,
+        targetRoleId: plan.target_role_id,
+        experienceLevel: plan.experience_level,
+        weeklyHours: plan.weekly_hours,
+        targetDate: plan.target_date,
+        learningPreference: plan.learning_preference,
+        goal: plan.goal,
+        currentRole: plan.current_role,
+        knownSkills: currentKnown,
+        mvcpMode: plan.mvcp_mode,
+        specialization: plan.specialization,
+      });
+      setPlan(updated);
+    }
+    setCopilotLoading(false);
+  };
+
+  // Export as PDF / Print
+  const handleExportPDF = () => {
+    setIsCompleteFlowModalOpen(true);
+  };
+
+  // Handle Opening Weekly Assessment Modal
+  const handleOpenAssessment = (week: RoadmapWeek) => {
+    setActiveAssessmentWeek(week);
+    setIsAssessmentModalOpen(true);
+  };
+
+  // Handle Assessment Submission Result
+  const handleAssessmentCompleted = (result: AssessmentSubmissionResult) => {
+    if (!plan || !activeAssessmentWeek) return;
+    const isPassed = result.status === "passed";
+
+    const updatedPhases = plan.phases.map((phase) => ({
+      ...phase,
+      weeks: phase.weeks.map((w) => {
+        if (w.id === activeAssessmentWeek.id) {
+          return {
+            ...w,
+            assessment_status: result.status,
+            assessment_score: result.score,
+          };
+        }
+        // Unlock next week if passed
+        if (isPassed && w.week_number === activeAssessmentWeek.week_number + 1) {
+          return {
+            ...w,
+            status: "in_progress" as const,
+          };
+        }
+        return w;
+      }),
+    }));
+
+    // Increment evidence-based mastery
+    const newMastery = isPassed
+      ? Math.min(100, Math.round(plan.careerverse_skill_mastery_pct + Math.max(3, 100 / plan.total_weeks)))
+      : plan.careerverse_skill_mastery_pct;
+
+    setPlan({
+      ...plan,
+      phases: updatedPhases,
+      careerverse_skill_mastery_pct: newMastery,
+    });
+  };
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Wayfinding Hero */}
-      <div className="bg-[#12122B] text-white rounded-3xl p-6 sm:p-8 border border-white/10 shadow-xl relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#4F46E5]/20 blur-3xl" />
-        <div className="flex items-center gap-2 mb-3">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-data font-bold tracking-wider uppercase bg-[#4F46E5] text-white">
-            <MapPin size={14} />
-            STATION 05 · DYNAMIC ROADMAP
-          </span>
-          <span className="text-xs font-mono text-gray-400">Chronological Route</span>
-        </div>
-        <h1 className="text-3xl sm:text-4xl font-display font-bold mb-2 text-white">
-          Multi-Year Career Roadmap
-        </h1>
-        <p className="text-sm sm:text-base font-body text-gray-300 max-w-2xl">
-          Follow a structured vertical transit line mapped across yearly checkpoints, competencies, and milestones.
-        </p>
-      </div>
-
-      {/* Target Role Selector Toolbar */}
-      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <span className="text-xs font-data font-bold text-[#6B7280] uppercase">
-            Current Destination Track:
-          </span>
-          <h2 className="text-2xl font-display font-bold text-[#12122B]">
-            {selectedRoleData?.name || "Select Role"}
-          </h2>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant="ink">{selectedRoleData?.category}</Badge>
-            <span className="text-xs font-data font-semibold text-[#0F766E]">
-              Avg Salary: {selectedRoleData?.salaryRange}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={() => setPickerOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Search size={16} />
-            Change Destination
-          </Button>
-
-          <Button
-            onClick={() => setJourneyOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Sparkles size={16} />
-            Personalize Plan
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Roadmap Area using Vertical Route Line Motif */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left 2 Cols: The Vertical Route Line */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-lg font-display font-bold text-[#12122B] flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#F5A623]" />
-              Route Stations ({roadmapStationItems.length} Years)
-            </h3>
-            <span className="text-xs font-data text-[#6B7280]">
-              Click station to highlight
-            </span>
-          </div>
-
-          <VerticalRouteLine
-            items={roadmapStationItems}
-            activeYear={activeStationYear}
-            onSelectYear={(idx) => setActiveStationYear(idx + 1)}
-          />
-        </div>
-
-        {/* Right Col: Certifications, Milestones & Waypoint Summary */}
-        <div className="space-y-6">
-          <Card className="border-[#4F46E5]/30">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="p-2 rounded-xl bg-[#4F46E5]/10 text-[#4F46E5]">
-                <Layers size={18} />
-              </span>
-              <div>
-                <h4 className="text-base font-display font-bold text-[#12122B]">
-                  Required Competencies
-                </h4>
-                <p className="text-xs font-body text-[#6B7280]">Key Industry Credentials</p>
-              </div>
+    <div className="space-y-8 max-w-7xl mx-auto pb-16 print:p-0 print:m-0 print:max-w-full">
+      {/* ========================================================================= */}
+      {/* 1. PRINT-ONLY HEADER (Vector PDF stylesheet layout) */}
+      {/* ========================================================================= */}
+      {plan && (
+        <div className="hidden print:block border-b-2 border-gray-900 pb-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                CareerVerse AI · Personalized Career Roadmap
+              </h1>
+              <p className="text-sm text-gray-600 mt-1">
+                Target Track: <strong className="text-gray-900">{plan.target_role_name}</strong> ({plan.target_role_category})
+              </p>
             </div>
-
-            <div className="space-y-2 mt-4">
-              {selectedRoleData?.requiredSkills.slice(0, 4).map((skill, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAFAF7] border border-gray-200"
-                >
-                  <span className="text-xs font-display font-semibold text-[#12122B]">
-                    {skill} Mastery
-                  </span>
-                  <span className="text-[10px] font-data font-bold text-[#4F46E5] uppercase">
-                    Level 0{idx + 1}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="bg-[#12122B] text-white border-white/10">
-            <div className="flex items-center gap-2 mb-2 text-[#F5A623]">
-              <Sparkles size={18} />
-              <h4 className="text-sm font-display font-bold text-white uppercase tracking-wider">
-                AI Guidance Tip
-              </h4>
-            </div>
-            <p className="text-xs font-body text-gray-300 leading-relaxed">
-              Focus primarily on completing <strong>Year 0{activeStationYear}</strong> milestones.
-              Consistent daily practice on core skills and 1 real project per semester delivers the highest placement probability in India.
-            </p>
-          </Card>
-        </div>
-      </div>
-
-      {/* Role Picker Modal */}
-      {pickerOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#12122B]/60 backdrop-blur-xs" onClick={() => setPickerOpen(false)} />
-          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden z-10">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="text-xl font-display font-bold text-[#12122B]">
-                Select Destination Role
-              </h3>
-              <button onClick={() => setPickerOpen(false)} className="p-2 rounded-xl hover:bg-gray-100">
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3.5 top-3 text-gray-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="Search role or domain..."
-                  value={roleQuery}
-                  onChange={(e) => setRoleQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] text-sm"
-                />
-              </div>
-
-              <div className="max-h-60 overflow-y-auto space-y-2">
-                {filteredRoles.map((role) => (
-                  <button
-                    key={role.id}
-                    onClick={() => {
-                      setSelectedRole(role.id);
-                      setPickerOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
-                      selectedRole === role.id
-                        ? "bg-[#4F46E5] text-white border-[#4F46E5]"
-                        : "bg-[#FAFAF7] hover:bg-gray-100 border-gray-200 text-[#12122B]"
-                    }`}
-                  >
-                    <div>
-                      <p className="text-sm font-display font-bold">{role.name}</p>
-                      <p className={`text-xs ${selectedRole === role.id ? "text-white/80" : "text-[#6B7280]"}`}>
-                        {role.category} · {role.salaryRange}
-                      </p>
-                    </div>
-                    <ArrowRight size={16} />
-                  </button>
-                ))}
-              </div>
+            <div className="text-right text-xs text-gray-500">
+              <p>Pace: {plan.weekly_hours} hrs/week</p>
+              <p>Target Date: {plan.target_date}</p>
+              <p>Engine: {plan.engine_version}</p>
+              <p>Generated: {new Date().toLocaleDateString()}</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Personalize Journey Modal */}
-      {journeyOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#12122B]/60 backdrop-blur-xs" onClick={() => setJourneyOpen(false)} />
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden z-10 max-h-[90vh] flex flex-col">
-            <div className="p-6 bg-[#12122B] text-white flex items-center justify-between border-b border-white/10">
-              <div>
-                <span className="text-[10px] font-data font-bold text-[#F5A623] uppercase">
-                  CUSTOM TRANSIT CALIBRATION
-                </span>
-                <h3 className="text-xl font-display font-bold text-white">
-                  Personalize Your Roadmap
-                </h3>
-              </div>
-              <button onClick={() => setJourneyOpen(false)} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-5 overflow-y-auto">
-              <div>
-                <label className="text-xs font-data font-bold text-[#6B7280] uppercase block mb-2">
-                  Experience Tier
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {(["Beginner", "Intermediate", "Experienced"] as ExperienceLevel[]).map((lvl) => (
-                    <button
-                      key={lvl}
-                      type="button"
-                      onClick={() => setExperienceLevel(lvl)}
-                      className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
-                        experienceLevel === lvl
-                          ? "bg-[#4F46E5] text-white border-[#4F46E5] shadow-xs font-bold"
-                          : "bg-[#FAFAF7] border-gray-200 text-[#12122B] hover:border-gray-300"
-                      }`}
-                    >
-                      <div className="text-sm font-display">{lvl}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-data font-bold text-[#6B7280] uppercase block mb-1.5">
-                    Duration (Years)
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={6}
-                    value={years}
-                    onChange={(e) => setYears(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] text-sm font-data"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-data font-bold text-[#6B7280] uppercase block mb-1.5">
-                    Hours / Week
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={hoursPerWeek}
-                    onChange={(e) => setHoursPerWeek(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#4F46E5] text-sm font-data"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-              <Button variant="outline" onClick={() => setJourneyOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                disabled={saving}
-                onClick={async () => {
-                  if (!user) {
-                    setJourneyOpen(false);
-                    return;
-                  }
-                  const plan = generatePersonalRoadmap({
-                    roleId: selectedRole,
-                    years,
-                    experienceLevel,
-                    hoursPerWeek,
-                    knownSkills,
-                  });
-                  if (!plan) return;
-
-                  try {
-                    setSaving(true);
-                    await firestoreService.saveRoadmapData(user.uid, {
-                      roleId: selectedRole,
-                      experienceLevel,
-                      years,
-                      hoursPerWeek,
-                      knownSkills,
-                      plan,
-                      createdAt: new Date(),
-                    });
-                    setJourneyOpen(false);
-                  } catch (e) {
-                    console.error("Failed to save roadmap:", e);
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
-              >
-                {saving ? "Saving Route..." : "Generate Custom Route"}
-              </Button>
-            </div>
-          </div>
+      {/* Loading Skeleton */}
+      {isLoading && (
+        <div className="bg-[#12122B] border border-white/10 rounded-3xl p-12 text-center space-y-4">
+          <div className="w-12 h-12 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin mx-auto" />
+          <h3 className="text-lg font-bold text-white">
+            Synthesizing Deterministic Skill Roadmap...
+          </h3>
+          <p className="text-xs text-gray-400 max-w-md mx-auto">
+            Resolving NetworkX dependency graph, checking verified profile competencies, and calculating timeline capacity.
+          </p>
         </div>
+      )}
+
+      {/* Main Roadmap Content */}
+      {!isLoading && plan && (
+        <div className="space-y-8">
+          {/* Adaptive Engine Notice Banner */}
+          {plan.latest_adaptation && (
+            <AdaptiveNoticeBanner
+              notice={plan.latest_adaptation}
+              onDismiss={() => {
+                const copy = { ...plan };
+                delete copy.latest_adaptation;
+                setPlan(copy);
+              }}
+            />
+          )}
+
+          {/* Interactive Header & Gauges */}
+          <RoadmapHeader
+            plan={plan}
+            onOpenSimulator={() => setIsSimulatorOpen(true)}
+            onOpenWizard={() => setIsWizardOpen(true)}
+            onExportPDF={handleExportPDF}
+            onToggleView={setActiveView}
+            activeView={activeView}
+          />
+
+          {/* View Modes */}
+          {activeView === "weekly" && currentPhase && currentWeek && (
+            <CurrentWeekFocus
+              currentPhase={currentPhase}
+              currentWeek={currentWeek}
+              onOpenDetail={(task) => setSelectedTaskForDetail(task)}
+              onToggleComplete={handleToggleComplete}
+              onSelectWeek={(wNum) => setActiveWeekNumber(wNum)}
+              totalWeeks={plan.total_weeks}
+              onBlockedNextWeek={() => setIsBlockedModalOpen(true)}
+              onViewCompleteFlow={() => setIsCompleteFlowModalOpen(true)}
+              onOpenAssessment={handleOpenAssessment}
+            />
+          )}
+
+          {activeView === "timeline" && (
+            <RoadmapTimelineView
+              phases={plan.phases}
+              onOpenDetail={(task) => setSelectedTaskForDetail(task)}
+              onToggleComplete={handleToggleComplete}
+              onJumpToWeek={(wNum) => {
+                setActiveWeekNumber(wNum);
+                setActiveView("weekly");
+              }}
+            />
+          )}
+
+          {activeView === "gaps" && (
+            <SkillGapPanel
+              skillGaps={plan.skill_gaps}
+              targetRoleName={plan.target_role_name}
+            />
+          )}
+
+          {activeView === "graph" && (
+            <SkillGraphView plan={plan} />
+          )}
+
+          {/* Natural Language Copilot Bar */}
+          <NaturalLanguageBar
+            onSendCommand={handleNaturalLanguageCommand}
+            isLoading={copilotLoading}
+          />
+        </div>
+      )}
+
+      {/* Task Detail Drawer */}
+      <TaskDetailDrawer
+        task={selectedTaskForDetail}
+        isOpen={!!selectedTaskForDetail}
+        onClose={() => setSelectedTaskForDetail(null)}
+        onCompleteTask={handleCompleteTask}
+        onAssessmentSubmit={handleAssessmentSubmit}
+      />
+
+      {/* What-If Simulator Modal */}
+      {plan && (
+        <WhatIfSimulator
+          plan={plan}
+          isOpen={isSimulatorOpen}
+          onClose={() => setIsSimulatorOpen(false)}
+          onApplyPlan={handleApplySimulator}
+        />
+      )}
+
+      {/* Roadmap Personalization Wizard Modal */}
+      <RoadmapCreationWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onSubmit={handleCreateRoadmap}
+        initialRoleId={plan?.target_role_id || preferredRoleId}
+        initialHours={plan?.weekly_hours || 10}
+        userSkills={appUser?.skills || []}
+        assessmentScore={appUser?.assessmentScore || null}
+      />
+
+      {/* Blocked Week Progression Guard Modal */}
+      {currentWeek && (
+        <BlockedWeekModal
+          isOpen={isBlockedModalOpen}
+          onClose={() => setIsBlockedModalOpen(false)}
+          currentWeek={currentWeek}
+          onOpenTaskDetail={(task) => setSelectedTaskForDetail(task)}
+          onViewCompleteFlow={() => setIsCompleteFlowModalOpen(true)}
+          assessmentBlocked={currentWeek.assessment_status !== "passed"}
+          onOpenAssessment={() => handleOpenAssessment(currentWeek)}
+        />
+      )}
+
+      {/* Complete Flow Vector PDF Syllabus Modal */}
+      {plan && (
+        <CompleteFlowPDFModal
+          isOpen={isCompleteFlowModalOpen}
+          onClose={() => setIsCompleteFlowModalOpen(false)}
+          plan={plan}
+        />
+      )}
+
+      {/* Dynamic 15-Question Weekly Assessment Modal */}
+      {isAssessmentModalOpen && activeAssessmentWeek && plan && (
+        <WeeklyAssessmentModal
+          isOpen={isAssessmentModalOpen}
+          onClose={() => setIsAssessmentModalOpen(false)}
+          week={activeAssessmentWeek}
+          plan={plan}
+          onAssessmentCompleted={handleAssessmentCompleted}
+        />
       )}
     </div>
   );
 };
+

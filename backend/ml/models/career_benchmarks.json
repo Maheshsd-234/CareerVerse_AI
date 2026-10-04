@@ -1,0 +1,207 @@
+{
+  "Full-Stack Software Engineer (SDE)": {
+    "base_ctc": 13.5,
+    "tier_1": 18.5,
+    "tier_2": 12.0,
+    "tier_3": 8.5,
+    "skills": [
+      "Web Development",
+      "Java",
+      "Python",
+      "Cloud/DevOps",
+      "SQL"
+    ],
+    "tools_to_learn": [
+      "Docker",
+      "Kubernetes",
+      "Next.js",
+      "Redis",
+      "REST APIs"
+    ]
+  },
+  "AI & Machine Learning Engineer": {
+    "base_ctc": 16.0,
+    "tier_1": 22.0,
+    "tier_2": 14.5,
+    "tier_3": 10.0,
+    "skills": [
+      "Machine Learning",
+      "Python",
+      "Data Science",
+      "SQL"
+    ],
+    "tools_to_learn": [
+      "PyTorch",
+      "Hugging Face",
+      "LangChain",
+      "MLflow",
+      "Vector DBs"
+    ]
+  },
+  "Data Scientist & Analytics Specialist": {
+    "base_ctc": 12.5,
+    "tier_1": 16.5,
+    "tier_2": 11.0,
+    "tier_3": 8.0,
+    "skills": [
+      "Data Science",
+      "SQL",
+      "Python",
+      "Machine Learning"
+    ],
+    "tools_to_learn": [
+      "Tableau",
+      "PowerBI",
+      "Pandas",
+      "Snowflake",
+      "dbt"
+    ]
+  },
+  "Cloud & DevOps Solutions Architect": {
+    "base_ctc": 14.0,
+    "tier_1": 19.5,
+    "tier_2": 13.0,
+    "tier_3": 9.0,
+    "skills": [
+      "Cloud/DevOps",
+      "Python",
+      "SQL",
+      "Java"
+    ],
+    "tools_to_learn": [
+      "AWS/GCP",
+      "Terraform",
+      "CI/CD Pipelines",
+      "Linux",
+      "Prometheus"
+    ]
+  },
+  "Embedded Systems & IoT Engineer": {
+    "base_ctc": 11.0,
+    "tier_1": 15.0,
+    "tier_2": 10.0,
+    "tier_3": 7.5,
+    "skills": [
+      "Embedded Systems",
+      "IoT",
+      "C++",
+      "MATLAB"
+    ],
+    "tools_to_learn": [
+      "FreeRTOS",
+      "STM32/ESP32",
+      "CAN Bus",
+      "KiCad",
+      "I2C/SPI"
+    ]
+  },
+  "Robotics & Automation Specialist": {
+    "base_ctc": 12.0,
+    "tier_1": 16.5,
+    "tier_2": 11.0,
+    "tier_3": 8.0,
+    "skills": [
+      "Robotics",
+      "Python",
+      "C++",
+      "SolidWorks"
+    ],
+    "tools_to_learn": [
+      "ROS2",
+      "Gazebo",
+      "Computer Vision",
+      "Control Theory",
+      "Kinematics"
+    ]
+  },
+  "CAD/CAE Mechanical Systems Designer": {
+    "base_ctc": 9.5,
+    "tier_1": 13.0,
+    "tier_2": 9.0,
+    "tier_3": 6.8,
+    "skills": [
+      "AutoCAD",
+      "SolidWorks",
+      "MATLAB"
+    ],
+    "tools_to_learn": [
+      "ANSYS FEA",
+      "GD&T",
+      "Catia",
+      "CFD",
+      "3D Printing"
+    ]
+  },
+  "Civil BIM & Structural Engineer": {
+    "base_ctc": 9.0,
+    "tier_1": 12.5,
+    "tier_2": 8.5,
+    "tier_3": 6.5,
+    "skills": [
+      "AutoCAD",
+      "Revit",
+      "MATLAB"
+    ],
+    "tools_to_learn": [
+      "STAAD Pro",
+      "ETABS",
+      "BIM 360",
+      "GIS Mapping",
+      "Primavera"
+    ]
+  },
+  "Technical Product Manager (PM)": {
+    "base_ctc": 15.5,
+    "tier_1": 21.0,
+    "tier_2": 14.0,
+    "tier_3": 9.5,
+    "skills": [
+      "SQL",
+      "Web Development",
+      "Python"
+    ],
+    "tools_to_learn": [
+      "A/B Testing",
+      "Figma",
+      "JIRA",
+      "Mixpanel",
+      "PRD Writing"
+    ]
+  },
+  "Strategy & Management Consultant": {
+    "base_ctc": 16.5,
+    "tier_1": 22.5,
+    "tier_2": 15.0,
+    "tier_3": 10.0,
+    "skills": [
+      "SQL",
+      "Python",
+      "Data Science"
+    ],
+    "tools_to_learn": [
+      "Financial Modeling",
+      "Market Sizing",
+      "Excel VBA",
+      "Executive Comms"
+    ]
+  },
+  "Cybersecurity & Threat Defense Engineer": {
+    "base_ctc": 14.5,
+    "tier_1": 20.0,
+    "tier_2": 13.5,
+    "tier_3": 9.0,
+    "skills": [
+      "Cybersecurity",
+      "Linux Systems",
+      "Python",
+      "Cloud/DevOps"
+    ],
+    "tools_to_learn": [
+      "Wireshark",
+      "Burp Suite",
+      "Metasploit",
+      "SIEM (Splunk)",
+      "Zero Trust Architecture"
+    ]
+  }
+}

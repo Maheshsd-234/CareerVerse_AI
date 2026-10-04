@@ -14,8 +14,30 @@ import { SkillGapPage } from "./pages/career/SkillGapPage";
 import { RoadmapPage } from "./pages/career/RoadmapPage";
 import { AssessmentPage } from "./pages/career/AssessmentPage";
 import { ChatbotPage } from "./pages/assistant/ChatbotPage";
-import { TrendingPage } from "./pages/career/TrendingPage";
 import { LiveJobsPage } from "./pages/career/LiveJobsPage";
+import { ResumePage } from "./pages/career/ResumePage";
+import { ApplicationTrackerPage } from "./pages/career/ApplicationTrackerPage";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+
+import { Outlet } from "react-router-dom";
+
+const AuthenticatedLayout: React.FC = () => {
+  return (
+    <div className="flex flex-col h-screen bg-[#FAFAF7] text-[#12122B]">
+      <Navbar />
+      <div className="flex flex-1 min-h-0">
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto">
+          <div className="w-full px-4 py-6 md:px-8 md:py-8">
+            <ErrorBoundary fallbackTitle="Career Waypoint View Error">
+              <Outlet />
+            </ErrorBoundary>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -45,44 +67,29 @@ const AppRoutes: React.FC = () => {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
-      {/* Protected Routes */}
+      {/* Protected Routes via Outlet Layout */}
       <Route
-        path="/*"
         element={
-          user ? (
-            <div className="flex flex-col h-screen bg-[#FAFAF7] text-[#12122B]">
-              <Navbar />
-              <div className="flex flex-1 min-h-0">
-                <Sidebar />
-                <main className="flex-1 overflow-y-auto">
-                  <div className="w-full px-4 py-6 md:px-8 md:py-8">
-                    <Routes>
-                      <Route path="/dashboard" element={<DashboardPage />} />
-                      <Route
-                        path="/career-navigator"
-                        element={<CareerNavigatorPage />}
-                      />
-                      <Route path="/role-explorer" element={<RoleExplorerPage />} />
-                      <Route path="/skill-gap" element={<SkillGapPage />} />
-                      <Route path="/roadmap" element={<RoadmapPage />} />
-                      <Route path="/assessment" element={<AssessmentPage />} />
-                      <Route path="/chatbot" element={<ChatbotPage />} />
-                      <Route path="/trending" element={<TrendingPage />} />
-                      <Route path="/live-jobs" element={<LiveJobsPage />} />
-                      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    </Routes>
-                  </div>
-                </main>
-              </div>
-            </div>
-          ) : (
-            <Navigate to="/login" replace />
-          )
+          user ? <AuthenticatedLayout /> : <Navigate to="/login" replace />
         }
-      />
+      >
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/career-navigator" element={<CareerNavigatorPage />} />
+        <Route path="/role-explorer" element={<RoleExplorerPage />} />
+        <Route path="/skill-gap" element={<SkillGapPage />} />
+        <Route path="/roadmap" element={<RoadmapPage />} />
+        <Route path="/assessment" element={<AssessmentPage />} />
+        <Route path="/chatbot" element={<ChatbotPage />} />
+        <Route path="/trending" element={<Navigate to="/role-explorer" replace />} />
+        <Route path="/live-jobs" element={<LiveJobsPage />} />
+        <Route path="/resume-builder" element={<ResumePage />} />
+        <Route path="/application-tracker" element={<ApplicationTrackerPage />} />
+        <Route path="/tracker" element={<Navigate to="/application-tracker" replace />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Route>
 
       {/* Catch-all */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
     </Routes>
   );
 };
@@ -91,7 +98,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <ErrorBoundary fallbackTitle="CareerVerse Platform Recovery">
+          <AppRoutes />
+        </ErrorBoundary>
       </AuthProvider>
     </Router>
   );

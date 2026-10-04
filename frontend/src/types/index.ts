@@ -17,6 +17,8 @@ export interface Role {
   salaryRange: string;
   trendScore: number;
   description: string;
+  fresherFriendly?: boolean;
+  targetLevel?: "Fresher / Entry" | "Mid-Level" | "Senior / Lead";
 }
 
 export interface CareerPath {

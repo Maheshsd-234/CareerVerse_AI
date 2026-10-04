@@ -1,0 +1,34 @@
+{
+  "model_name": "CareerVerse Tier-3 Roadmap Placement & Offer Predictor",
+  "dataset_rows": 12000,
+  "test_samples": 2400,
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "roc_auc": 1.0,
+    "package_mae_lpa": 3.13,
+    "package_r2": -0.0553
+  },
+  "feature_importances": {
+    "aptitude_score": 0.3722,
+    "coding_skills": 0.3554,
+    "cgpa": 0.262,
+    "communication_skills": 0.0029,
+    "certifications": 0.0024,
+    "internships": 0.0021,
+    "projects": 0.0018,
+    "backlogs": 0.0012
+  },
+  "input_features": [
+    "cgpa",
+    "backlogs",
+    "internships",
+    "certifications",
+    "coding_skills",
+    "communication_skills",
+    "aptitude_score",
+    "projects"
+  ]
+}

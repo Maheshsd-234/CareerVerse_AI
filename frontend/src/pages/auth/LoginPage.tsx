@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, Lock, AlertCircle, ArrowRight } from "lucide-react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase/config";
+import { Mail, Lock, AlertCircle, UserPlus, X, ArrowRight, ShieldAlert } from "lucide-react";
 import { Button, Card } from "../../components/ui/UI";
 import { LoadingSpinner } from "../../components/ui/Loading";
 import { useAuth } from "../../hooks/useAuth";
 
 export const LoginPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showNotFoundModal, setShowNotFoundModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -23,25 +22,46 @@ export const LoginPage: React.FC = () => {
 
   const handleLogin = async () => {
     setError("");
+    setShowNotFoundModal(false);
+
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
 
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      await login(email.trim(), password);
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
       const code = err?.code as string | undefined;
-      if (
-        code === "auth/invalid-credential" ||
-        code === "auth/wrong-password" ||
-        code === "auth/user-not-found"
-      ) {
-        setError("Invalid email or password credentials");
+
+      if (code === "auth/invalid-credential" || code === "auth/user-not-found") {
+        setShowNotFoundModal(true);
+        setError("Account not found with these credentials. Please create an account or verify your details.");
+      } else if (code === "auth/wrong-password") {
+        setError("Incorrect password. Please verify your password and try again.");
+      } else if (code === "auth/invalid-email") {
+        setError("Invalid email address format. Please enter a valid email.");
+      } else if (code === "auth/too-many-requests") {
+        setError("Too many failed login attempts. Please wait a moment before trying again.");
+      } else if (code === "auth/network-request-failed") {
+        setError("Network connection issue. Please check your internet connection and try again.");
       } else {
-        setError(err?.message || "Login verification failed");
+        setError(err?.message || "Login failed. Please verify your credentials and try again.");
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoToRegister = () => {
+    setShowNotFoundModal(false);
+    navigate("/register", { state: { email: email.trim() } });
   };
 
   return (
@@ -49,6 +69,58 @@ export const LoginPage: React.FC = () => {
       {/* Background Metro Route Line Accent Glows */}
       <div className="pointer-events-none absolute -top-40 -right-40 h-96 w-96 rounded-full bg-[#4F46E5]/20 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -left-40 h-96 w-96 rounded-full bg-[#14B8A6]/15 blur-3xl" />
+
+      {/* Account Not Found Popup Modal */}
+      {showNotFoundModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-gray-100 relative space-y-5">
+            <button
+              onClick={() => setShowNotFoundModal(false)}
+              className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
+              <ShieldAlert size={26} />
+            </div>
+
+            <div className="space-y-2">
+              <h2 className="text-xl font-display font-bold text-[#12122B]">
+                Account Not Found
+              </h2>
+              <p className="text-xs text-gray-600 leading-relaxed font-body">
+                We could not find an active CareerVerse account associated with:
+              </p>
+              <div className="p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs font-data font-bold text-gray-800 break-all">
+                {email.trim()}
+              </div>
+              <p className="text-xs text-gray-500 font-body">
+                If you have not registered on CareerVerse AI yet, create your free account now to calibrate your career roadmap.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <Button
+                type="button"
+                onClick={handleGoToRegister}
+                className="w-full flex items-center justify-center gap-2 bg-[#4F46E5] hover:bg-[#4338CA] text-white py-2.5 text-xs font-bold"
+              >
+                <UserPlus size={15} />
+                Create New Account
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowNotFoundModal(false)}
+                className="w-full sm:w-auto text-xs py-2.5 text-gray-600 border-gray-300"
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card className="w-full max-w-md shadow-2xl relative z-10 border-gray-200/90 p-8">
         <div className="text-center mb-6">
@@ -66,8 +138,8 @@ export const LoginPage: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-2 text-xs font-body">
-            <AlertCircle size={16} className="flex-shrink-0" />
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-start gap-2 text-xs font-body">
+            <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
@@ -97,9 +169,11 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-data font-bold text-[#6B7280] uppercase mb-1.5">
-              Password
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-data font-bold text-[#6B7280] uppercase">
+                Password
+              </label>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3 text-gray-400" size={16} />
               <input

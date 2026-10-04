@@ -4,12 +4,13 @@ import {
   LayoutDashboard,
   Navigation,
   Compass,
-  TrendingUp,
   BarChart3,
   MapPin,
   PenTool,
   MessageSquare,
   Briefcase,
+  FileText,
+  ListChecks,
   Menu,
   X,
 } from "lucide-react";
@@ -22,8 +23,9 @@ const sidebarItems = [
   { icon: MapPin, label: "Roadmap", path: "/roadmap", stationCode: "05" },
   { icon: PenTool, label: "Assessment", path: "/assessment", stationCode: "06" },
   { icon: MessageSquare, label: "AI Counselor", path: "/chatbot", stationCode: "07" },
-  { icon: TrendingUp, label: "Market Trends", path: "/trending", stationCode: "08" },
-  { icon: Briefcase, label: "Live Jobs", path: "/live-jobs", stationCode: "09" },
+  { icon: Briefcase, label: "Live Jobs", path: "/live-jobs", stationCode: "08" },
+  { icon: FileText, label: "Resume Builder", path: "/resume-builder", stationCode: "09" },
+  { icon: ListChecks, label: "App Tracker", path: "/application-tracker", stationCode: "10" },
 ];
 
 export const Sidebar: React.FC = () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   TrendingUp,
@@ -9,10 +9,21 @@ import {
   Sparkles,
   Compass,
   FileCheck2,
+  Briefcase,
+  FileText,
+  X,
+  Activity,
+  ListChecks,
 } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { Card, Badge, Button, ProgressBar } from "../../components/ui/UI";
 import { roles, trendingRoles } from "../../data/roles";
+import {
+  getMarketVelocityRadar,
+  getDefaultMarketRadar,
+  type MarketRadarSummary,
+  type RoleVelocityData,
+} from "../../services/marketVelocityService";
 import { LoadingCard } from "../../components/ui/Loading";
 import { RouteLine } from "../../components/ui/RouteLine";
 
@@ -21,6 +32,8 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [animatedSkillsProgress, setAnimatedSkillsProgress] = useState(0);
+  const [showFirstTimeModal, setShowFirstTimeModal] = useState(false);
+  const [radarSummary, setRadarSummary] = useState<MarketRadarSummary>(getDefaultMarketRadar);
 
   const skillsCount = appUser?.skills?.length || 0;
   const targetSkillsPercentage = Math.min((skillsCount / 10) * 100, 100);
@@ -32,6 +45,41 @@ export const DashboardPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Fetch live market velocity radar (synchronized with Station 03 Role Explorer)
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const summary = await getMarketVelocityRadar(roles, false);
+        if (alive) setRadarSummary(summary);
+      } catch (err) {
+        if (alive) setRadarSummary(getDefaultMarketRadar());
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Check if first-time user who has not taken the assessment
+  useEffect(() => {
+    if (!isLoading) {
+      try {
+        const hasAssessed = Boolean(
+          appUser?.selectedCareer ||
+          appUser?.assessmentScore ||
+          localStorage.getItem("careerverse_assessment_done")
+        );
+        const dismissedSession = sessionStorage.getItem("careerverse_onboarding_dismissed");
+        if (!hasAssessed && !dismissedSession) {
+          setShowFirstTimeModal(true);
+        }
+      } catch {
+        // storage disabled or blocked
+      }
+    }
+  }, [isLoading, appUser]);
+
   // Animate skills bar fill from 0 to target on mount
   useEffect(() => {
     if (!isLoading) {
@@ -42,6 +90,38 @@ export const DashboardPage: React.FC = () => {
     }
   }, [isLoading, targetSkillsPercentage]);
 
+  // Enhanced career lookup supporting normalized slugs (e.g. ai--machine-learning---genai -> ml-engineer)
+  const recommendedCareer = useMemo(() => {
+    if (!appUser?.selectedCareer) return null;
+    const direct = roles.find((r) => r.id === appUser.selectedCareer);
+    if (direct) return direct;
+
+    const rawKey = appUser.selectedCareer.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return (
+      roles.find((r) => {
+        const rKey = r.id.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const nameKey = r.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+        return (
+          rKey.includes(rawKey) ||
+          rawKey.includes(rKey) ||
+          nameKey.includes(rawKey) ||
+          (rawKey.includes("machinelearning") && r.id === "ml-engineer") ||
+          (rawKey.includes("ai") && r.id === "ml-engineer")
+        );
+      }) || null
+    );
+  }, [appUser?.selectedCareer]);
+
+  // Dynamically sorted by Market Velocity Radar (100% synchronized with Role Explorer)
+  const topVelocityRoles = useMemo(() => {
+    const sorted = [...roles].sort((a, b) => {
+      const scoreA = Number(radarSummary?.roles?.[a.id]?.velocityScore ?? a.trendScore ?? 9);
+      const scoreB = Number(radarSummary?.roles?.[b.id]?.velocityScore ?? b.trendScore ?? 9);
+      return scoreB - scoreA;
+    });
+    return sorted.slice(0, 3);
+  }, [radarSummary]);
+
   if (isLoading) {
     return (
       <LoadingCard
@@ -50,14 +130,6 @@ export const DashboardPage: React.FC = () => {
       />
     );
   }
-
-  const recommendedCareer = appUser?.selectedCareer
-    ? roles.find((r) => r.id === appUser.selectedCareer)
-    : null;
-
-  const trendingRolesData = trendingRoles
-    .map((id) => roles.find((r) => r.id === id))
-    .filter(Boolean);
 
   const displayName =
     appUser?.displayName || user?.displayName || user?.email?.split("@")[0] || "Student";
@@ -111,6 +183,86 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
+      {/* First-Time User Onboarding Modal */}
+      {showFirstTimeModal && (
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12122B] text-white rounded-3xl max-w-lg w-full border border-white/10 shadow-2xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
+            <div className="pointer-events-none absolute -top-20 -right-20 h-60 w-60 rounded-full bg-[#14B8A6]/25 blur-3xl" />
+            <div className="flex justify-between items-start">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#14B8A6]/20 border border-[#14B8A6]/30 text-xs font-data font-bold text-[#14B8A6]">
+                <Sparkles size={14} /> NEW STUDENT ROUTE
+              </div>
+              <button
+                onClick={() => {
+                  sessionStorage.setItem("careerverse_onboarding_dismissed", "true");
+                  setShowFirstTimeModal(false);
+                }}
+                className="text-gray-400 hover:text-white p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-display font-bold text-white mb-2">
+                Welcome to CareerVerse!
+              </h2>
+              <p className="text-sm font-body text-gray-300 leading-relaxed">
+                Complete your Personalized Career Discovery Assessment to map your route and calculate your skill gaps.
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setShowFirstTimeModal(false);
+                  navigate("/assessment");
+                }}
+                className="w-full justify-center py-3 text-sm font-semibold"
+              >
+                Start Career Discovery Assessment <ArrowRight size={16} className="ml-2" />
+              </Button>
+              <button
+                onClick={() => {
+                  sessionStorage.setItem("careerverse_onboarding_dismissed", "true");
+                  setShowFirstTimeModal(false);
+                }}
+                className="w-full text-center text-xs font-data text-gray-400 hover:text-white py-1 transition-colors"
+              >
+                Explore Dashboard First
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Discovery Prompt Banner if assessment not completed */}
+      {!appUser?.assessmentScore && (
+        <div className="bg-gradient-to-r from-[#4F46E5]/10 via-[#14B8A6]/10 to-transparent border border-[#4F46E5]/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#4F46E5] flex items-center justify-center text-white shrink-0 shadow-md">
+              <Compass size={20} />
+            </div>
+            <div>
+              <h4 className="font-display font-bold text-sm text-[#12122B]">
+                Discover Your Career Trajectory & Skill Gaps
+              </h4>
+              <p className="text-xs text-gray-600">
+                Tailored for 10th stream selection, 12th college degrees, and university branches.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => navigate("/assessment")}
+            className="text-xs shrink-0 self-start sm:self-auto shadow-sm"
+          >
+            Start Discovery Assessment <ArrowRight size={14} className="ml-1.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Main Grid: Recommended Route & Skills Progress */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Recommended Career Track Card */}
@@ -150,7 +302,7 @@ export const DashboardPage: React.FC = () => {
                     Salary: <span className="text-[#0F766E] font-bold">{recommendedCareer.salaryRange}</span>
                   </span>
                   <span className="text-xs font-data font-semibold text-[#6B7280]">
-                    Demand: <span className="text-[#4F46E5] font-bold">{recommendedCareer.trendScore.toFixed(1)}/10</span>
+                    Demand: <span className="text-[#4F46E5] font-bold">{Number(recommendedCareer.trendScore ?? 9).toFixed(1)}/10</span>
                   </span>
                 </div>
               </div>
@@ -272,61 +424,113 @@ export const DashboardPage: React.FC = () => {
         </Card>
       </div>
 
-      {/* High-Growth Trending Tracks */}
+      {/* High-Growth Trending Tracks - 100% Synced with Role Explorer Radar */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <TrendingUp className="text-[#4F46E5]" size={24} />
             <h2 className="text-xl sm:text-2xl font-display font-bold text-[#12122B] m-0">
               High-Velocity Market Roles
             </h2>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-data font-bold uppercase bg-emerald-500/15 text-emerald-800 border border-emerald-500/30">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+              </span>
+              Radar Synced
+            </span>
           </div>
           <button
-            onClick={() => navigate("/trending")}
-            className="text-xs font-data font-bold text-[#4F46E5] hover:underline flex items-center gap-1"
+            onClick={() => navigate("/role-explorer")}
+            className="text-xs font-data font-bold text-[#4F46E5] hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
           >
-            View All Tracks <ArrowRight size={14} />
+            View All 27 Tracks in Role Explorer <ArrowRight size={14} />
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {trendingRolesData.slice(0, 3).map((role) => (
-            <Card
-              key={role?.id}
-              hover
-              onClick={() => navigate(`/role-explorer?role=${role?.id}`)}
-              className="flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
+          {topVelocityRoles.map((role) => {
+            const velocity: RoleVelocityData = radarSummary?.roles?.[role.id] || {
+              roleId: role.id,
+              velocityScore: role.trendScore,
+              deltaPercent: "+7.5%",
+              trendStatus: role.trendScore >= 9.5 ? "surge" : "high",
+              marketDriver: "High-volume hiring demand across Indian IT and GCC engineering centres",
+              estimatedOpenings: "10,000+",
+              lastUpdated: new Date().toLocaleDateString("en-IN"),
+            };
+
+            const isSurge = velocity.trendStatus === "surge";
+            const isHigh = velocity.trendStatus === "high";
+
+            return (
+              <Card
+                key={role.id}
+                hover
+                onClick={() => navigate(`/role-explorer?role=${role.id}`)}
+                className="flex flex-col justify-between group transition-all duration-200 hover:border-[#4F46E5]/40"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-3">
                     <span className="text-[10px] font-data font-bold text-[#6B7280] uppercase tracking-wider">
-                      {role?.category}
+                      {role.category}
                     </span>
-                    <h3 className="text-lg font-display font-bold text-[#12122B]">
-                      {role?.name}
-                    </h3>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-data font-bold ${
+                        isSurge
+                          ? "bg-emerald-500/15 text-emerald-800 border border-emerald-500/30"
+                          : isHigh
+                          ? "bg-[#4F46E5]/15 text-[#4F46E5] border border-[#4F46E5]/30"
+                          : "bg-blue-500/15 text-blue-800 border border-blue-500/30"
+                      }`}
+                    >
+                      <Zap
+                        size={12}
+                        className={isSurge ? "text-emerald-600 fill-emerald-600" : "text-[#4F46E5]"}
+                      />
+                      <span>{Number(velocity.velocityScore ?? 9).toFixed(1)}/10</span>
+                      <span className="text-[10px] font-mono opacity-85">
+                        ({velocity.deltaPercent} {isSurge ? "Surge" : isHigh ? "High" : ""})
+                      </span>
+                    </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded text-xs font-data font-bold bg-[#14B8A6]/15 text-[#0F766E]">
-                    {role?.trendScore.toFixed(1)}/10
-                  </span>
+
+                  <h3 className="text-lg font-display font-bold text-[#12122B] mb-2 group-hover:text-[#4F46E5] transition-colors">
+                    {role.name}
+                  </h3>
+
+                  {/* Dynamic 2026 Demand Driver Box */}
+                  <div className="p-2.5 rounded-xl bg-gradient-to-r from-[#FAFAF7] to-indigo-50/40 border border-indigo-100/70 mb-3 text-[11px] text-[#1E1B4B]">
+                    <div className="flex items-center gap-1 text-[10px] font-data font-bold text-[#4F46E5] uppercase tracking-wider mb-0.5">
+                      <Activity size={11} />
+                      2026 Demand Catalyst
+                    </div>
+                    <p className="line-clamp-2 leading-tight text-gray-700 font-body">
+                      {velocity.marketDriver}
+                    </p>
+                  </div>
+
+                  <p className="text-xs font-body text-[#6B7280] line-clamp-2 mb-4 leading-relaxed">
+                    {role.description}
+                  </p>
                 </div>
 
-                <p className="text-xs font-body text-[#6B7280] line-clamp-2 mb-4">
-                  {role?.description}
-                </p>
-              </div>
-
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs font-data font-bold text-[#12122B]">
-                  {role?.salaryRange}
-                </span>
-                <span className="text-xs font-display font-semibold text-[#4F46E5] flex items-center gap-1">
-                  Explore <ArrowRight size={14} />
-                </span>
-              </div>
-            </Card>
-          ))}
+                <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-data text-gray-500 block leading-tight uppercase">
+                      Indian Band
+                    </span>
+                    <span className="text-xs font-data font-bold text-[#12122B]">
+                      {role.salaryRange}
+                    </span>
+                  </div>
+                  <span className="text-xs font-display font-semibold text-[#4F46E5] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                    Explore Track <ArrowRight size={14} />
+                  </span>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
@@ -336,12 +540,15 @@ export const DashboardPage: React.FC = () => {
           <MapPin size={18} className="text-[#4F46E5]" />
           Wayfinding Shortcuts
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { label: "Career Navigator", desc: "10th, 12th & Degree", icon: Compass, path: "/career-navigator" },
             { label: "Role Explorer", desc: "10+ In-Depth Profiles", icon: BarChart3, path: "/role-explorer" },
             { label: "Dynamic Roadmap", desc: "3-4 Year Progression", icon: MapPin, path: "/roadmap" },
             { label: "AI Counselor", desc: "24/7 AI Guidance", icon: Zap, path: "/chatbot" },
+            { label: "Live Jobs", desc: "Active Openings & Trends", icon: Briefcase, path: "/live-jobs" },
+            { label: "Resume Builder", desc: "ATS & PDF Export", icon: FileText, path: "/resume-builder" },
+            { label: "App Tracker", desc: "Gmail Sync & Funnel", icon: ListChecks, path: "/application-tracker" },
           ].map((action) => {
             const Icon = action.icon;
             return (

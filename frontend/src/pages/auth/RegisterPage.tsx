@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Mail, Lock, User, AlertCircle, CheckCircle, GraduationCap, Compass, Sparkles, FileText, Users, Briefcase } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { Button, Card } from "../../components/ui/UI";
@@ -47,9 +47,12 @@ const EDUCATION_STAGES = [
 export const RegisterPage: React.FC = () => {
   const { user, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefilledEmail = (location.state as { email?: string } | null)?.email || "";
+
   const [formData, setFormData] = useState({
     displayName: "",
-    email: "",
+    email: prefilledEmail,
     password: "",
     confirmPassword: "",
     currentStage: "school",
