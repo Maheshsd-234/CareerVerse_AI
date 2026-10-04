@@ -110,6 +110,7 @@ export interface AssessmentSubmissionResult {
   total_questions: number;
   percentage: number;
   passed: boolean;
+  status?: string;
   passing_score: number;
   difficulty_breakdown: Record<string, { correct: number; total: number }>;
   topic_performance: Record<string, { correct: number; total: number; percentage: number }>;
@@ -121,6 +122,8 @@ export interface AssessmentSubmissionResult {
 
 export interface DeprioritizedSkill {
   skill: string;
+  skill_id?: string;
+  skill_name?: string;
   is_core: boolean;
   estimated_hours: number;
   reason: string;
@@ -138,6 +141,7 @@ export interface RoadmapWeek {
   learning_hours?: number;
   practice_hours?: number;
   assessment_hours?: number;
+  assessment_score?: number;
   assessment_status?: "pending" | "passed" | "failed";
   passing_score?: number;
   total_questions?: number;

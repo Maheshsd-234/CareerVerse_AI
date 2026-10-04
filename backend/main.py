@@ -17,13 +17,14 @@ import pandas as pd
 import joblib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 ML_DIR = os.path.join(BASE_DIR, "ml")
 SERVICES_DIR = os.path.join(ML_DIR, "services")
 MODELS_DIR = os.path.join(ML_DIR, "models")
 
-for p in [ML_DIR, SERVICES_DIR, MODELS_DIR]:
+for p in [SERVICES_DIR, ML_DIR, BASE_DIR, PARENT_DIR, MODELS_DIR]:
     if p not in sys.path:
-        sys.path.append(p)
+        sys.path.insert(0, p)
 
 from resume_skill_analyzer import (
     analyze_resume_text,
@@ -34,6 +35,18 @@ from resume_skill_analyzer import (
 from semantic_matcher import match_resume_to_job
 from applications_api import router as applications_router
 from roadmap_api import router as roadmap_router
+
+# Ensure parent and backend dirs are on sys.path for robust imports
+PARENT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+if PARENT_DIR not in sys.path:
+    sys.path.insert(0, PARENT_DIR)
+
+try:
+    from backend.routes.resume_routes import router as resume_router
+    from backend.routes.ats_routes import router as ats_router
+except ImportError:
+    from routes.resume_routes import router as resume_router
+    from routes.ats_routes import router as ats_router
 
 app = FastAPI(
     title="CareerVerse AI - ML Career Recommendation Microservice",
@@ -54,6 +67,9 @@ app.add_middleware(
 app.include_router(applications_router)
 # Mount Station 05 TIER 3 Advanced AI Roadmap API
 app.include_router(roadmap_router)
+# Mount Station 09 Resume Station APIs
+app.include_router(resume_router)
+app.include_router(ats_router)
 
 def resolve_model_path(filename: str) -> str:
     """Resolve model path from ml/models/ with fallback to ml/."""

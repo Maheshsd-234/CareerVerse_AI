@@ -38,6 +38,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+backend/data_store/
 .Python
 env/
 venv/

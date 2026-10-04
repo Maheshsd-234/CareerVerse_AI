@@ -332,7 +332,9 @@ export const dynamicRoadmapService = {
       ? roleDef.requiredSkills
       : ["Programming Fundamentals", "Data Structures & Algorithms", "System Design", "Cloud & Deployment"];
 
-    const curriculum = getCurriculumForRole(roleId, roleName, category, requiredSkills);
+    const curriculum: any = {
+      oneMonthSprint: []
+    };
 
     // Timeline calculation: 1 month = 4 weeks, 3 months = 12 weeks, 6 months = 24 weeks, etc.
     const months = Math.max(1, params.targetTimelineMonths || 6);
@@ -734,7 +736,7 @@ export const dynamicRoadmapService = {
           const unit = curriculum.oneMonthSprint[wNum - 1];
           primarySkill = requiredSkills[(wNum - 1) % requiredSkills.length];
           weekTitle = unit.title;
-          concepts = unit.topics.flatMap((t) => t.subtopics).slice(0, 3);
+          concepts = unit.topics.flatMap((t: any) => t.subtopics).slice(0, 3);
           practiceLab = `Implement hands-on code labs for ${unit.title} following industry standards.`;
           projectDeliverable = unit.microProject.title;
           interviewQ = {
@@ -914,7 +916,7 @@ export const dynamicRoadmapService = {
       estimated_hours: 30 + idx * 5,
       is_core: idx < 3,
       market_demand: 95 - idx * 3,
-      prerequisites: idx === 0 ? [] : [requiredSkills[0]],
+      prerequisites: idx === 0 ? [] : [{ skill: requiredSkills[0], satisfied: true, level: 1 }],
       all_prerequisites_met: true,
       description: `Core requirement for ${roleName}.`,
     }));

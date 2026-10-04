@@ -277,7 +277,7 @@ export const RoadmapPage: React.FC = () => {
   // Handle Assessment Submission Result
   const handleAssessmentCompleted = (result: AssessmentSubmissionResult) => {
     if (!plan || !activeAssessmentWeek) return;
-    const isPassed = result.status === "passed";
+    const isPassed = result.passed || (result as any).status === "passed";
 
     const updatedPhases = plan.phases.map((phase) => ({
       ...phase,
@@ -285,7 +285,7 @@ export const RoadmapPage: React.FC = () => {
         if (w.id === activeAssessmentWeek.id) {
           return {
             ...w,
-            assessment_status: result.status,
+            assessment_status: (isPassed ? "passed" : "failed") as "passed" | "failed",
             assessment_score: result.score,
           };
         }

@@ -83,6 +83,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/trending" element={<Navigate to="/role-explorer" replace />} />
         <Route path="/live-jobs" element={<LiveJobsPage />} />
         <Route path="/resume-builder" element={<ResumePage />} />
+        <Route path="/resume" element={<ResumePage />} />
         <Route path="/application-tracker" element={<ApplicationTrackerPage />} />
         <Route path="/tracker" element={<Navigate to="/application-tracker" replace />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
