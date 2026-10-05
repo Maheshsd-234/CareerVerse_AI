@@ -99,6 +99,7 @@ class ResumeSectionUpdateRequest(BaseModel):
 
 class ResumeExportRequest(BaseModel):
     format: str = Field(..., pattern="^(pdf_formatted|pdf_ats|docx|txt)$")
+    resume_data: Optional[Dict[str, Any]] = None
 
 class ResumeDuplicateRequest(BaseModel):
     newTitle: str

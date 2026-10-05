@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import { Mail, Lock, User, AlertCircle, CheckCircle, GraduationCap, Compass, Sparkles, FileText, Users, Briefcase } from "lucide-react";
+import { Mail, Lock, User, AlertCircle, CheckCircle, GraduationCap, Compass, Sparkles, FileText, Users, Briefcase, ArrowRight } from "lucide-react";
 import { useAuth } from "../../hooks/useAuth";
 import { Button, Card } from "../../components/ui/UI";
 import { LoadingSpinner } from "../../components/ui/Loading";
@@ -45,7 +45,7 @@ const EDUCATION_STAGES = [
 ];
 
 export const RegisterPage: React.FC = () => {
-  const { user, register } = useAuth();
+  const { user, register, loginAsGuest } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const prefilledEmail = (location.state as { email?: string } | null)?.email || "";
@@ -110,7 +110,7 @@ export const RegisterPage: React.FC = () => {
       console.error("Registration error:", err);
       const code = err?.code;
       if (code === "auth/email-already-in-use") {
-        setError("This email is already registered. Please sign in or use another email.");
+        setError("This email is already registered in CareerVerse. Please sign in with your password, or reset your password on the login page.");
       } else if (code === "auth/invalid-email") {
         setError("Please provide a valid email address.");
       } else if (code === "auth/weak-password") {
@@ -118,6 +118,18 @@ export const RegisterPage: React.FC = () => {
       } else {
         setError(err?.message || "Registration failed. Please check your credentials.");
       }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    try {
+      setSubmitting(true);
+      await loginAsGuest(formData.currentStage);
+      navigate("/dashboard", { replace: true });
+    } catch (e: any) {
+      setError("Could not launch demo session. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -146,9 +158,23 @@ export const RegisterPage: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-2 text-xs font-body">
-            <AlertCircle size={16} className="flex-shrink-0" />
-            <span>{error}</span>
+          <div className="mb-4 p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl space-y-2 text-xs font-body">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+            {error.includes("already registered") && (
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => navigate("/login", { state: { email: formData.email.trim() } })}
+                  className="px-3 py-1.5 bg-[#4F46E5] text-white rounded-lg font-bold hover:bg-[#4338CA] transition-colors inline-flex items-center gap-1"
+                >
+                  <span>Sign In with this email</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -270,6 +296,24 @@ export const RegisterPage: React.FC = () => {
           >
             {submitting ? <LoadingSpinner size="sm" /> : "Complete Registration & Board Route"}
           </Button>
+
+          <div className="pt-2">
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-gray-200"></div>
+              <span className="flex-shrink mx-2 text-[10px] text-gray-400 font-data uppercase">or instant access</span>
+              <div className="flex-grow border-t border-gray-200"></div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGuestLogin}
+              disabled={submitting}
+              className="w-full mt-2 py-2 px-3 bg-gradient-to-r from-slate-100 to-indigo-50/60 hover:from-slate-200 hover:to-indigo-100 border border-slate-200 text-[#12122B] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all"
+            >
+              <Sparkles size={14} className="text-[#4F46E5]" />
+              <span>Explore as Demo Student (1-Click)</span>
+            </button>
+          </div>
         </form>
 
         <div className="mt-5 text-center text-xs font-body text-[#6B7280]">

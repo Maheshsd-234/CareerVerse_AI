@@ -13,7 +13,116 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ resume }) => {
   const { personalInfo, summary, experience, education, skills, projects, certifications, template } = resume;
 
   const handlePrint = () => {
-    window.print();
+    const resumeEl = document.getElementById('printable-resume-node');
+    if (!resumeEl) {
+      window.print();
+      return;
+    }
+
+    const printContent = resumeEl.innerHTML;
+    const fontClass = template === 'minimal' ? 'Georgia, Cambria, serif' : '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+    const printHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${personalInfo.fullName || 'Resume'} - Print</title>
+        <style>
+          @page {
+            size: letter portrait;
+            margin: 12mm 15mm;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            font-family: ${fontClass};
+            font-size: 10.5pt;
+            line-height: 1.4;
+          }
+          .resume-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff !important;
+          }
+          h1 { font-size: 20pt; font-weight: bold; margin: 0 0 4px 0; }
+          h2, h3 { font-size: 11pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 6px 0; }
+          p { margin: 3px 0; font-size: 10pt; }
+          ul { margin: 4px 0; padding-left: 18px; }
+          li { margin-bottom: 3px; font-size: 9.5pt; }
+          a { color: #2563eb !important; text-decoration: none; }
+          .border-b { border-bottom: 1px solid #cbd5e1; }
+          .border-indigo-200 { border-color: #c7d2fe !important; }
+          .text-indigo-900 { color: #1e1b4b !important; }
+          .text-indigo-700 { color: #3730a3 !important; }
+          .text-indigo-600 { color: #4338ca !important; }
+          .text-slate-900 { color: #0f172a !important; }
+          .text-slate-800 { color: #1e293b !important; }
+          .text-slate-700 { color: #334155 !important; }
+          .text-slate-600 { color: #475569 !important; }
+          .text-slate-500 { color: #64748b !important; }
+          .bg-slate-100 { background-color: #f1f5f9 !important; }
+          .bg-indigo-50 { background-color: #eef2ff !important; }
+          .rounded { border-radius: 4px; }
+          .rounded-full { border-radius: 9999px; }
+          .flex { display: flex; }
+          .flex-wrap { flex-wrap: wrap; }
+          .items-center { align-items: center; }
+          .justify-between { justify-content: space-between; }
+          .justify-center { justify-content: center; }
+          .gap-1 { gap: 4px; }
+          .gap-2 { gap: 8px; }
+          .gap-x-3 { column-gap: 12px; }
+          .gap-y-1 { row-gap: 4px; }
+          .text-center { text-align: center; }
+          .text-left { text-align: left; }
+          .font-semibold { font-weight: 600; }
+          .font-bold { font-weight: 700; }
+          .font-medium { font-weight: 500; }
+          .italic { font-style: italic; }
+        </style>
+      </head>
+      <body>
+        <div class="resume-container">
+          ${printContent}
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create an isolated hidden iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(printHtml);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (iframe.parentNode) {
+            document.body.removeChild(iframe);
+          }
+        }, 1500);
+      }, 250);
+    }
   };
 
   // Convert resume to simulated ATS parsed plaintext

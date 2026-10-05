@@ -4,6 +4,7 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { auth, db } from "../firebase/config";
@@ -72,28 +73,12 @@ export const authService = {
     displayName: string,
     currentStage?: string
   ) => {
-    let user: User;
-
-    try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      user = userCredential.user;
-    } catch (err: any) {
-      // If user already exists in Auth, attempt login with provided credentials
-      if (err?.code === "auth/email-already-in-use") {
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        user = userCredential.user;
-      } else {
-        throw err;
-      }
-    }
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    const user = userCredential.user;
 
     if (displayName) {
       try {
@@ -120,6 +105,11 @@ export const authService = {
     );
     await authService.ensureUserProfile(userCredential.user);
     return userCredential.user;
+  },
+
+  // Send Password Reset Link
+  sendPasswordReset: async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
   },
 
   // Logout

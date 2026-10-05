@@ -14,6 +14,8 @@ interface AuthContextType {
     displayName: string,
     currentStage?: string
   ) => Promise<void>;
+  loginAsGuest: (stage?: string) => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   updateUserStage: (stage: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -25,13 +27,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [appUser, setAppUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper to construct guest user
+  const createGuestSession = (stage: string = "skills") => {
+    const guestUid = localStorage.getItem("cv_guest_uid") || `guest_${Date.now()}`;
+    localStorage.setItem("cv_guest_uid", guestUid);
+    localStorage.setItem("cv_is_guest_mode", "true");
+    localStorage.setItem(`cv_user_stage_${guestUid}`, stage);
+
+    const mockFirebaseUser = {
+      uid: guestUid,
+      email: "guest@careerverse.ai",
+      displayName: "Guest Engineer",
+      emailVerified: true,
+      isAnonymous: true,
+    } as unknown as User;
+
+    const mockProfile: AppUser = {
+      uid: guestUid,
+      email: "guest@careerverse.ai",
+      displayName: "Guest Engineer",
+      currentStage: stage,
+      createdAt: new Date(),
+      skills: ["Python", "FastAPI", "React", "TypeScript"],
+      selectedCareer: "Full Stack Engineer",
+      assessmentScore: 85,
+    };
+
+    return { mockFirebaseUser, mockProfile };
+  };
+
   useEffect(() => {
     const unsubscribe = authService.onAuthStateChange((firebaseUser) => {
       void (async () => {
         try {
-          setUser(firebaseUser);
-
           if (firebaseUser) {
+            setUser(firebaseUser);
+            localStorage.removeItem("cv_is_guest_mode");
             try {
               const profile = await authService.getUserProfile(firebaseUser.uid);
               setAppUser(profile);
@@ -40,7 +71,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setAppUser(null);
             }
           } else {
-            setAppUser(null);
+            // Check if user was previously in guest mode
+            const isGuest = localStorage.getItem("cv_is_guest_mode") === "true";
+            if (isGuest) {
+              const savedStage = localStorage.getItem("cv_guest_stage") || "skills";
+              const { mockFirebaseUser, mockProfile } = createGuestSession(savedStage);
+              setUser(mockFirebaseUser);
+              setAppUser(mockProfile);
+            } else {
+              setUser(null);
+              setAppUser(null);
+            }
           }
         } finally {
           setLoading(false);
@@ -55,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fbUser = await authService.login(email, password);
     if (fbUser) {
       setUser(fbUser);
+      localStorage.removeItem("cv_is_guest_mode");
       const profile = await authService.getUserProfile(fbUser.uid);
       setAppUser(profile);
     }
@@ -69,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fbUser = await authService.register(email, password, displayName, currentStage);
     if (fbUser) {
       setUser(fbUser);
+      localStorage.removeItem("cv_is_guest_mode");
       if (currentStage) {
         localStorage.setItem(`cv_user_stage_${fbUser.uid}`, currentStage);
       }
@@ -90,6 +133,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsGuest = async (stage: string = "skills") => {
+    localStorage.setItem("cv_guest_stage", stage);
+    const { mockFirebaseUser, mockProfile } = createGuestSession(stage);
+    setUser(mockFirebaseUser);
+    setAppUser(mockProfile);
+  };
+
+  const sendPasswordReset = async (email: string) => {
+    await authService.sendPasswordReset(email);
+  };
+
   const updateUserStage = async (stage: string) => {
     if (!user) return;
     localStorage.setItem(`cv_user_stage_${user.uid}`, stage);
@@ -104,6 +158,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setLoading(true);
     try {
+      localStorage.removeItem("cv_is_guest_mode");
+      localStorage.removeItem("cv_guest_uid");
+      localStorage.removeItem("cv_guest_stage");
+      setUser(null);
+      setAppUser(null);
       await authService.logout();
     } finally {
       setLoading(false);
@@ -118,6 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading,
         login,
         register,
+        loginAsGuest,
+        sendPasswordReset,
         updateUserStage,
         logout,
       }}
