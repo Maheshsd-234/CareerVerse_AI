@@ -80,7 +80,18 @@ export const ASSESSMENT_DOMAIN_TO_CAREER: Record<string, string> = {
   "Science PCM": "Science (PCM) Engineering & Tech Track",
   "Science PCB": "Science (PCB) Medicine & Life Sciences",
   "Commerce": "Commerce, Finance & Business Track",
-  "Arts & Humanities": "Arts, Humanities, Law & Media Track"
+  "Arts & Humanities": "Arts, Humanities, Law & Media Track",
+  // Class 12 degree & branch discovery tracks
+  "Computer Science, AI & IT Engineering": "Full-Stack Software Engineer (SDE)",
+  "Electronics, Electrical & Robotics Engineering": "Robotics & Automation Specialist",
+  "Mechanical, Aerospace & Core Engineering": "CAD/CAE Mechanical Systems Designer",
+  "Civil, Environmental & Architecture": "Civil BIM & Structural Engineer",
+  "Medicine & Clinical Healthcare (MBBS/BDS)": "Science (PCB) Medicine & Life Sciences",
+  "Biotechnology, Pharmacy & Bio-Sciences": "Science (PCB) Medicine & Life Sciences",
+  "Commerce, CA & Corporate Finance": "Commerce, Finance & Business Track",
+  "Management, Business & Entrepreneurship": "Technical Product Manager (PM)",
+  "Law, Civil Services & Public Policy": "Arts, Humanities, Law & Media Track",
+  "Design, UI/UX & Creative Media": "Arts, Humanities, Law & Media Track"
 };
 
 // Rich, curated skills for each domain & career
@@ -238,6 +249,67 @@ export const DOMAIN_SKILLS_MAP: Record<string, string[]> = {
     "Constitutional Law & Political Systems",
     "Contemporary History & Social Movements",
     "Media Literacy, Visual Design & Journalism"
+  ],
+  // Class 12 Discovery Foundation Skills
+  "Computer Science, AI & IT Engineering": [
+    "Python & C++ Programming Logic",
+    "Data Structures & Object-Oriented Principles",
+    "Web Fundamentals (HTML/CSS/JS)",
+    "Calculus & Discrete Mathematics"
+  ],
+  "Electronics, Electrical & Robotics Engineering": [
+    "Circuit Theory & Ohm's Law",
+    "Microcontroller Programming (Arduino)",
+    "Digital Logic & Semiconductor Physics",
+    "Sensor Integration & Actuators"
+  ],
+  "Mechanical, Aerospace & Core Engineering": [
+    "Engineering Drawing & 3D CAD Basics",
+    "Statics, Dynamics & Force Vectors",
+    "Thermodynamics & Fluid Flow Principles",
+    "Workshop Tools & Material Science"
+  ],
+  "Civil, Environmental & Architecture": [
+    "Structural Mechanics & Building Codes",
+    "Architectural Drafting & Spatial Geometry",
+    "Surveying & Environmental Assessment",
+    "Materials Testing & Concrete Technology"
+  ],
+  "Medicine & Clinical Healthcare (MBBS/BDS)": [
+    "Human Anatomy & Medical Terminology",
+    "Pathology & Disease Mechanisms",
+    "Biochemistry & Laboratory Diagnosis",
+    "Patient Communication & Clinical Ethics"
+  ],
+  "Biotechnology, Pharmacy & Bio-Sciences": [
+    "Molecular Biology & Genetic Engineering",
+    "Pharmaceutical Formulation & Organic Chemistry",
+    "Microbiology & Cell Culture Techniques",
+    "Bioprocess Technology & Analytical Chemistry"
+  ],
+  "Commerce, CA & Corporate Finance": [
+    "Corporate Accounting & Auditing Standards",
+    "Financial Statement Analysis & Ratios",
+    "Direct & Indirect Taxation Law",
+    "Capital Markets & Portfolio Theory"
+  ],
+  "Management, Business & Entrepreneurship": [
+    "Business Model Canvas & Lean Startup",
+    "Marketing Strategy & Customer Discovery",
+    "Financial Budgeting & Cash Flow Forecasting",
+    "Organizational Leadership & Pitching"
+  ],
+  "Law, Civil Services & Public Policy": [
+    "Constitutional Law & Jurisprudence",
+    "Public Administration & Indian Polity",
+    "Critical Legal Argumentation & Moot Court",
+    "Current Affairs & Socio-Economic Analysis"
+  ],
+  "Design, UI/UX & Creative Media": [
+    "Design Thinking & User Research",
+    "Wireframing, Figma & UI Prototyping",
+    "Visual Aesthetics, Typography & Color Theory",
+    "Interaction Design & Usability Testing"
   ]
 };
 

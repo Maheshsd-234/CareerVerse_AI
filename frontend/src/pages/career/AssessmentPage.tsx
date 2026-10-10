@@ -20,10 +20,12 @@ import type {
 } from "../../services/adaptiveAssessmentService";
 import {
   CLASS_10_QUESTIONS,
+  CLASS_12_QUESTIONS,
   COLLEGE_QUESTIONS,
   EXTENDED_TIE_BREAKERS,
   checkClarityStatus,
-  fetchLiveTrendQuestions
+  fetchLiveTrendQuestions,
+  getQuestionsWithShuffledOptions
 } from "../../services/adaptiveAssessmentService";
 
 const ALL_SKILLS = [
@@ -73,18 +75,21 @@ export const AssessmentPage: React.FC = () => {
     mlCareerService.getMetrics().then(setModelMetrics);
   }, []);
 
-  // Pre-fetch or load questions
+  // Pre-fetch or load questions with randomly positioned options
   const loadQuestionsForStage = (selectedStage: StudentStage, selectedBranch: string = branch) => {
-    // 1. Instantly set benchmark questions (0ms delay)
+    // 1. Instantly set benchmark questions tailored to stage with randomly shuffled options
     if (selectedStage === "10th") {
-      setActiveQuestions([...CLASS_10_QUESTIONS]);
+      setActiveQuestions(getQuestionsWithShuffledOptions(CLASS_10_QUESTIONS));
+      setIsLiveAI(false);
+    } else if (selectedStage === "12th") {
+      setActiveQuestions(getQuestionsWithShuffledOptions(CLASS_12_QUESTIONS));
       setIsLiveAI(false);
     } else {
-      setActiveQuestions([...COLLEGE_QUESTIONS]);
+      setActiveQuestions(getQuestionsWithShuffledOptions(COLLEGE_QUESTIONS));
     }
 
-    // 2. Quietly pre-fetch 2026 dynamic industry trend questions in background
-    if (selectedStage !== "10th") {
+    // 2. Quietly pre-fetch 2026 dynamic industry trend questions in background for college
+    if (selectedStage === "college") {
       fetchLiveTrendQuestions(selectedStage, selectedBranch)
         .then((res) => {
           if (res && res.questions && res.questions.length >= 20) {
@@ -163,8 +168,8 @@ export const AssessmentPage: React.FC = () => {
       const clarity = checkClarityStatus(updatedScores, 25);
       // If ambiguous and we haven't added tie-breakers yet, extend with tie-breakers (up to 50 max)
       if (clarity.isAmbiguous && activeQuestions.length === 25) {
-        // Append extended tie-breaker questions
-        setActiveQuestions((prev) => [...prev, ...EXTENDED_TIE_BREAKERS]);
+        // Append extended tie-breaker questions with randomly shuffled options
+        setActiveQuestions((prev) => [...prev, ...getQuestionsWithShuffledOptions(EXTENDED_TIE_BREAKERS)]);
         setCurrentQuestionIdx(nextIdx);
         return;
       }
@@ -232,6 +237,17 @@ export const AssessmentPage: React.FC = () => {
         "Civil BIM & Structural Engineer": "software-engineer",
         "Tech Product Management & Consulting": "product-manager",
         "Technical Product Manager (PM)": "product-manager",
+        // Class 12 tracks
+        "Computer Science, AI & IT Engineering": "fullstack-dev",
+        "Electronics, Electrical & Robotics Engineering": "software-engineer",
+        "Mechanical, Aerospace & Core Engineering": "software-engineer",
+        "Civil, Environmental & Architecture": "software-engineer",
+        "Medicine & Clinical Healthcare (MBBS/BDS)": "career-navigator",
+        "Biotechnology, Pharmacy & Bio-Sciences": "career-navigator",
+        "Commerce, CA & Corporate Finance": "career-navigator",
+        "Management, Business & Entrepreneurship": "product-manager",
+        "Law, Civil Services & Public Policy": "career-navigator",
+        "Design, UI/UX & Creative Media": "career-navigator",
       };
       const careerId = DOMAIN_TO_ROLE_ID[topDomain] || DOMAIN_TO_ROLE_ID[mlResult?.recommended_career || ""] || topDomain.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
@@ -508,17 +524,41 @@ export const AssessmentPage: React.FC = () => {
                     </div>
                   </div>
                 </Card>
+              ) : stage === "12th" ? (
+                <Card className="border border-gray-200 p-5 space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-data text-teal-600 uppercase font-bold">
+                    <BookOpen size={15} /> Class 12th Degree Calibrator
+                  </div>
+                  <h4 className="font-display font-bold text-sm text-[#12122B]">
+                    Degree & Branch Exploration Engine
+                  </h4>
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    Evaluates your 12th stream (PCM, PCB, Commerce, Arts, Diploma), engineering branch curiosities, medical & management aspirations, and competitive entrance exam focus.
+                  </p>
+                  <div className="pt-2 text-[11px] text-gray-500 font-data space-y-1 border-t border-gray-100">
+                    <div className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                      <Sparkles size={12} /> Dynamic Randomized Options Active
+                    </div>
+                    <div>• 10 High-Demand Undergraduate Tracks</div>
+                    <div>• B.Tech (CS/ECE/Mech/Civil), MBBS, B.Com, BBA, Law</div>
+                  </div>
+                </Card>
               ) : (
                 <Card className="border border-gray-200 p-5 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-data text-gray-500 uppercase">
                     <Layers size={15} className="text-[#4F46E5]" /> Diagnostic Roadmap
                   </div>
                   <h4 className="font-display font-bold text-sm text-[#12122B]">
-                    {stage === "10th" ? "Stream Compatibility Engine" : "Degree Program Calibrator"}
+                    Stream Compatibility Engine
                   </h4>
                   <p className="text-xs text-gray-600 leading-relaxed">
-                    Evaluates your cognitive logic, subject affinity, and real-world preferences to recommend the highest matching pathway.
+                    Evaluates your cognitive logic, subject affinity, and real-world preferences to recommend the highest matching pathway (Science PCM, PCB, Commerce, Arts).
                   </p>
+                  <div className="pt-2 text-[11px] text-gray-500 font-data space-y-1 border-t border-gray-100">
+                    <div className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                      <Sparkles size={12} /> Dynamic Randomized Options Active
+                    </div>
+                  </div>
                 </Card>
               )}
 

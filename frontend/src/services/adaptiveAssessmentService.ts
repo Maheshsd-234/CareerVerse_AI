@@ -18,6 +18,29 @@ export interface AssessmentQuestion {
   options: QuestionOption[];
 }
 
+/**
+ * Robust Fisher-Yates shuffle to randomize question options so roles/domains
+ * are never positioned in the same predictable slots.
+ */
+export function shuffleOptions(options: QuestionOption[]): QuestionOption[] {
+  const array = [...options];
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+/**
+ * Returns a question set with all options dynamically shuffled.
+ */
+export function getQuestionsWithShuffledOptions(questions: AssessmentQuestion[]): AssessmentQuestion[] {
+  return questions.map((q) => ({
+    ...q,
+    options: shuffleOptions(q.options),
+  }));
+}
+
 // ----------------------------------------------------
 // CLASS 10TH QUESTION BANK (Stream Exploration)
 // ----------------------------------------------------
@@ -350,6 +373,343 @@ export const CLASS_10_QUESTIONS: AssessmentQuestion[] = [
       { text: "Physics, Chemistry, and Biology (PCB) — with Biotechnology/Psychology", domain: "Science PCB", points: 10 },
       { text: "Commerce with Mathematics / Accountancy & Economics", domain: "Commerce", points: 10 },
       { text: "Humanities / Arts (History, Political Science, Psychology, Sociology, Design)", domain: "Arts & Humanities", points: 10 },
+    ],
+  },
+];
+
+// ----------------------------------------------------
+// CLASS 12TH / INTERMEDIATE QUESTION BANK (Degree & Branch Exploration)
+// ----------------------------------------------------
+export const CLASS_12_QUESTIONS: AssessmentQuestion[] = [
+  // SECTION 1: Stream Specialization & Broad Career Orientation (Q1-Q8)
+  {
+    id: 1,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "12th Stream & Subject Combination",
+    question: "What stream or major subject combination did you study in Class 11th & 12th?",
+    options: [
+      { text: "PCM / PCMC / PCMCs (Physics, Chemistry, Mathematics & Computer Science)", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "PCB / PCMB (Physics, Chemistry, Biology with Math or Biotechnology)", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+      { text: "Commerce with Math / Accountancy, Business Studies & Economics", domain: "Commerce, CA & Corporate Finance", points: 10 },
+      { text: "Humanities / Arts, Vocational Stream, or Polytechnic Technical Diploma", domain: "Law, Civil Services & Public Policy", points: 10 },
+      { text: "Pure Science PCM with interest in Hardware, Robotics & Aerospace", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+    ],
+  },
+  {
+    id: 2,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "Broad Higher Education Ambition",
+    question: "Which broad higher education path feels most aligned with your personal ambitions?",
+    options: [
+      { text: "4-Year B.Tech / B.E in high-demand Computer Science, AI, or Core Engineering", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Medical & Life Sciences: MBBS, BDS, B.Pharm, Biotech, or Allied Healthcare", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+      { text: "Commerce & Corporate: B.Com, BBA, Chartered Accountancy (CA), or Economics", domain: "Commerce, CA & Corporate Finance", points: 10 },
+      { text: "Law, Public Policy, Civil Services (UPSC), Defense, or Creative Design (B.Des)", domain: "Law, Civil Services & Public Policy", points: 10 },
+    ],
+  },
+  {
+    id: 3,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "Engineering Branch Affinity",
+    question: "If you join an Engineering (B.Tech / B.E) college, which domain excites you most?",
+    options: [
+      { text: "Software Engineering, Web/App Development, Cloud, and Machine Learning (CSE/IT)", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Microprocessors, Chip Design (VLSI), Telecom, IoT, and Robotics (ECE/EEE)", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Automobiles, Electric Vehicles, Aerospace, Drones, and CAD Machines (Mech/Aero)", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Smart Cities, Green Structural Design, Bridges, and Modern Architecture (Civil/B.Arch)", domain: "Civil, Environmental & Architecture", points: 10 },
+    ],
+  },
+  {
+    id: 4,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "Healthcare & Life Sciences Direction",
+    question: "If exploring the Medical or Biology landscape, which specialization calls to you?",
+    options: [
+      { text: "Clinical Patient Care, Surgery, Diagnostics, and Hospital Rounds (MBBS/BDS)", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+      { text: "Pharmaceutical Drug Formulation, Vaccine Research, and Genetics (B.Pharm/Biotech)", domain: "Biotechnology, Pharmacy & Bio-Sciences", points: 10 },
+      { text: "Healthcare AI, Bio-medical Device Engineering, and Hospital Systems", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Hospital Administration, Healthcare Business, and Public Health Policy", domain: "Management, Business & Entrepreneurship", points: 10 },
+    ],
+  },
+  {
+    id: 5,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "Commerce, Finance & Management",
+    question: "If drawn towards Commerce or Business, which career trajectory interests you?",
+    options: [
+      { text: "Auditing, Taxation, Corporate Finance, and clearing Chartered Accountancy (CA)", domain: "Commerce, CA & Corporate Finance", points: 10 },
+      { text: "Product Management, Startup Entrepreneurship, Venture Strategy, and BBA/BMS", domain: "Management, Business & Entrepreneurship", points: 10 },
+      { text: "Algorithmic Trading, Fintech Software, and Quantitative Financial Analysis", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Corporate Mergers, Commercial Contracts, and Business Legal Compliance (Law)", domain: "Law, Civil Services & Public Policy", points: 10 },
+    ],
+  },
+  {
+    id: 6,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "Design, Media & Public Governance",
+    question: "If exploring creative, legal, or civil service tracks, what is your strongest passion?",
+    options: [
+      { text: "User Experience (UI/UX) Design, Digital Products, Animation, and Branding (B.Des)", domain: "Design, UI/UX & Creative Media", points: 10 },
+      { text: "Constitutional Law, Cyber Law, Criminal Litigation, and Corporate Judiciary (BA LLB)", domain: "Law, Civil Services & Public Policy", points: 10 },
+      { text: "Civil Services (UPSC IAS/IPS), Defense Services (NDA), and Public Administration", domain: "Law, Civil Services & Public Policy", points: 10 },
+      { text: "Designing physical architectural blueprints, sustainable buildings, and town planning", domain: "Civil, Environmental & Architecture", points: 10 },
+    ],
+  },
+  {
+    id: 7,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "Target Entrance Examination",
+    question: "Which major national or state entrance exam are you preparing for or most inclined towards?",
+    options: [
+      { text: "JEE Main / JEE Advanced / BITSAT / State Engineering CETs", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "NEET UG / AIIMS / State Medical & Pharmacy Entrance Exams", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+      { text: "CUET Commerce / CA Foundation / IPMAT (IIM 5-Year Integrated Management)", domain: "Commerce, CA & Corporate Finance", points: 10 },
+      { text: "CLAT / AILET (Law), UCEED / NID (Design), NATA (Arch), or NDA (Armed Forces)", domain: "Law, Civil Services & Public Policy", points: 10 },
+    ],
+  },
+  {
+    id: 8,
+    sectionNumber: 1,
+    sectionTitle: "Section 1: Academic Stream & Career Direction",
+    category: "College Milestone Vision",
+    question: "What is your primary milestone during your 3 to 4 years in undergraduate college?",
+    options: [
+      { text: "Securing a top Software / Tech campus placement or contributing to open-source", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Securing a top rank in NEET-PG / Hospital Residency / Medical Research Fellowship", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+      { text: "Qualifying CA Intermediate, clearing CFA level-1, or securing top Finance placement", domain: "Commerce, CA & Corporate Finance", points: 10 },
+      { text: "Publishing physical engineering designs, drone prototypes, or Formula Student racing", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+    ],
+  },
+
+  // SECTION 2: Domain Affinity & Branch Specialization Deep Dive (Q9-Q17)
+  {
+    id: 9,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Coding vs Hands-on Building",
+    question: "How do you prefer solving technical problems?",
+    options: [
+      { text: "Writing code scripts, building software applications, and debugging logic", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Connecting electronic circuits, sensors, Arduino/Raspberry Pi, and robotics boards", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Assembling mechanical gears, 3D printing components, and working with tools", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Performing biological assays, clinical investigations, and chemical experiments", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 10,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Mathematics Comfort Level",
+    question: "What kind of mathematical problem solving do you find most natural and rewarding?",
+    options: [
+      { text: "Discrete math, logic algorithms, binary calculations, and graph theory", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Calculus, vectors, trigonometry, and complex electrical waveform equations", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Applied mechanics, thermodynamic formulas, and structural force calculations", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Commercial arithmetic, balance sheet ratios, tax percentages, and statistics", domain: "Commerce, CA & Corporate Finance", points: 10 },
+    ],
+  },
+  {
+    id: 11,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Daily Workstation Setup",
+    question: "Which everyday workstation setup sounds most appealing for your college and career?",
+    options: [
+      { text: "Dual computer screens running modern code editors (VS Code), terminal, and cloud apps", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "An electronics bench with breadboards, multimeters, oscilloscopes, and soldering kits", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "A mechanical workshop with 3D CAD modeling software, machine tools, and engine bays", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "A sterile hospital clinic or diagnostic laboratory with medical instruments", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 12,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Emerging Technology Curiosity",
+    question: "Which breakthrough modern technology fascinates you the most?",
+    options: [
+      { text: "Artificial Intelligence, Large Language Models, and Autonomous Cyber Defense", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Semiconductor chip fabrication (VLSI), 5G/6G communication, and bionic prosthetics", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Electric Vehicles (EV), reusable space rockets (ISRO/SpaceX), and supersonic aircraft", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "CRISPR gene editing, mRNA cancer vaccines, and personalized biomedical therapy", domain: "Biotechnology, Pharmacy & Bio-Sciences", points: 10 },
+    ],
+  },
+  {
+    id: 13,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "College Project Dream",
+    question: "If given full funding to build a dream project in your 1st year of college, you build:",
+    options: [
+      { text: "An AI-powered mobile app with thousands of active student users", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "An autonomous line-following or obstacle-avoiding surveillance drone/robot", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "An ultra-efficient electric bike prototype or aerodynamic Formula racing kart", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "A low-cost water purification system, healthcare diagnostic kit, or organic bio-filter", domain: "Biotechnology, Pharmacy & Bio-Sciences", points: 10 },
+    ],
+  },
+  {
+    id: 14,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Core Academic Strength",
+    question: "Which 12th standard subject or chapter did you intuitively enjoy the most?",
+    options: [
+      { text: "Computer Science / Informatics Practices / Boolean Logic / Python Programming", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Physics: Current Electricity, Electromagnetic Induction & Semiconductor Electronics", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Physics: Laws of Motion, Rotational Dynamics, Thermodynamics & Fluid Mechanics", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Biology: Human Physiology, Genetics, Molecular Basis of Inheritance & Biotechnology", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 15,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Career Impact & Purpose",
+    question: "How do you want your future work to create value in the real world?",
+    options: [
+      { text: "Writing scalable digital software and intelligent algorithms that automate human tasks", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Building reliable hardware electronics, smart grids, and robotic automation", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Manufacturing sustainable vehicles, aerospace propulsion, and physical machinery", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Directly curing diseases, treating patients, and relieving human physical pain", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 16,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Software Tool Curiosity",
+    question: "Which software tool or professional platform would you be most eager to learn in college?",
+    options: [
+      { text: "Python, C++, Java, React, GitHub, and Cloud Deployment platforms", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "MATLAB, Simulink, Arduino IDE, Keil MicroVision, and KiCad PCB Designer", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "AutoCAD, SolidWorks, CATIA, and ANSYS Engineering Simulation", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Tally Prime, Advanced Excel, Bloomberg Financial Terminals, or Python for Finance", domain: "Commerce, CA & Corporate Finance", points: 10 },
+    ],
+  },
+  {
+    id: 17,
+    sectionNumber: 2,
+    sectionTitle: "Section 2: Branch Affinity & Practical Problem Solving",
+    category: "Role Model / Inspiration",
+    question: "Which type of public figure or career achievement inspires you most?",
+    options: [
+      { text: "Tech visionaries like Sundar Pichai or Linus Torvalds who built global software empires", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Electronics and chip architects who design microprocessors powering the modern world", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Aerospace and automotive pioneers who build rockets, electric cars, and machines", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Renowned surgeons and medical researchers who eradicate deadly health epidemics", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+
+  // SECTION 3: Real-World Scenarios & Degree Trade-offs (Q18-Q25)
+  {
+    id: 18,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "College vs Branch Dilemma",
+    question: "If counseling offers you two choices, which one do you pick?",
+    options: [
+      { text: "Take Computer Science / AI / IT in a reputable college because software is your passion", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Take Electronics & Communication (ECE) to get the best blend of hardware, chips, and coding", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Take Mechanical or Aerospace Engineering in a top-tier institution (IIT/NIT/BITS)", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Choose a focused Medical, Commerce, or Law seat because that matches your long-term goal", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 19,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "Post-College 5-Year Goal",
+    question: "Where do you envision yourself 5 years from today?",
+    options: [
+      { text: "Working as a Software Development Engineer (SDE) at a top product tech company", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Working as a Chip Designer, Embedded Systems Architect, or Robotics Specialist", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Working as a Design/R&D Engineer in Automotive, Defense (DRDO/ISRO), or Aerospace", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Practicing as a Doctor / Resident Surgeon, or working as a Clinical Healthcare Specialist", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 20,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "Handling Academic Pressure",
+    question: "When facing a heavy syllabus with limited time, how do you perform best?",
+    options: [
+      { text: "Practicing coding algorithms, logic questions, and solving test cases", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Deriving mathematical circuits, physics formulas, and schematic diagrams", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Visualizing 3D mechanical motions, force vectors, and practical machine laws", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Deep conceptual memorization of biological pathways, anatomical terms, and medical facts", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 21,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "Campus Extracurricular Passion",
+    question: "Which college student club would you join on day 1?",
+    options: [
+      { text: "Google Developer Student Club (GDSC) or Competitive Programming / Web Dev Club", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Robotics Society, Drone Club, or Electronics Maker Club", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Formula Student Racing Team, Aero-Design Club, or 3D Printing Workshop", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Red Cross Medical Youth Volunteer Club, Bio-Science Society, or Healthcare Outreach", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 22,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "Higher Studies vs Immediate Job",
+    question: "What is your mindset towards higher studies after your bachelor's degree?",
+    options: [
+      { text: "Aiming for high campus placement in software tech right after graduation", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "Pursuing M.Tech or MS in Microelectronics, AI, or Robotics in India/Abroad", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "Appearing for GATE / PSU exams or pursuing MS in Aerospace / Automotive engineering", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Clearing NEET-PG / INI-CET for specialized Doctor of Medicine (MD/MS) residency", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 23,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "Startup vs Corporate",
+    question: "If you were to co-found a technology venture with college friends, what would it build?",
+    options: [
+      { text: "An AI SaaS application, cloud service, or consumer mobile platform", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "A smart hardware device, IoT sensor system, or home automation robotics company", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "An Electric Vehicle (EV) component, drone delivery system, or clean energy engine", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "A digital health diagnostics startup, telemedicine portal, or bio-pharma brand", domain: "Biotechnology, Pharmacy & Bio-Sciences", points: 10 },
+    ],
+  },
+  {
+    id: 24,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "Personal Working Style",
+    question: "What type of technical problem energizes you rather than draining you?",
+    options: [
+      { text: "A complex software bug that takes 4 hours of code trace analysis to isolate and fix", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "A short-circuit on a circuit board where you trace signals pin-by-pin using a probe", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "A physical mechanical gear or bracket that fails under stress until redesigned in CAD", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "Diagnosing an unusual medical symptom or biological puzzle through scientific data", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
+    ],
+  },
+  {
+    id: 25,
+    sectionNumber: 3,
+    sectionTitle: "Section 3: Real-World Scenarios & College Trade-Offs",
+    category: "Final Destination Confirmation",
+    question: "When you step into college for admissions, your clear top priority choice is:",
+    options: [
+      { text: "B.Tech Computer Science, Artificial Intelligence, or Information Technology", domain: "Computer Science, AI & IT Engineering", points: 10 },
+      { text: "B.Tech Electronics & Communication (ECE), Electrical (EEE), or Robotics", domain: "Electronics, Electrical & Robotics Engineering", points: 10 },
+      { text: "B.Tech Mechanical, Aerospace, Automobile, or Core Engineering disciplines", domain: "Mechanical, Aerospace & Core Engineering", points: 10 },
+      { text: "MBBS, BDS, B.Pharm, Biotechnology, or Professional Medical & Healthcare Degrees", domain: "Medicine & Clinical Healthcare (MBBS/BDS)", points: 10 },
     ],
   },
 ];
@@ -883,9 +1243,24 @@ export async function fetchLiveTrendQuestions(
 
   if (stage === "10th") {
     return { 
-      questions: [...CLASS_10_QUESTIONS], 
+      questions: getQuestionsWithShuffledOptions(CLASS_10_QUESTIONS), 
       isLiveAI: false, 
       paradigms: ["Science PCM", "Science PCB", "Commerce", "Arts & Humanities"] 
+    };
+  }
+
+  if (stage === "12th") {
+    return {
+      questions: getQuestionsWithShuffledOptions(CLASS_12_QUESTIONS),
+      isLiveAI: false,
+      paradigms: [
+        "Computer Science, AI & IT Engineering",
+        "Electronics, Electrical & Robotics Engineering",
+        "Mechanical, Aerospace & Core Engineering",
+        "Civil, Environmental & Architecture",
+        "Medicine & Clinical Healthcare (MBBS/BDS)",
+        "Commerce, CA & Corporate Finance"
+      ]
     };
   }
 
@@ -895,7 +1270,7 @@ export async function fetchLiveTrendQuestions(
     if (cached) {
       const parsed = JSON.parse(cached);
       if (Array.isArray(parsed) && parsed.length >= 20) {
-        return { questions: parsed, isLiveAI: true, paradigms };
+        return { questions: getQuestionsWithShuffledOptions(parsed), isLiveAI: true, paradigms };
       }
     }
   } catch (e) {
@@ -904,7 +1279,7 @@ export async function fetchLiveTrendQuestions(
 
   const apiKey = import.meta.env.VITE_GROQ_API_KEY?.trim();
   if (!apiKey) {
-    return { questions: [...COLLEGE_QUESTIONS], isLiveAI: false, paradigms };
+    return { questions: getQuestionsWithShuffledOptions(COLLEGE_QUESTIONS), isLiveAI: false, paradigms };
   }
 
   const prompt = `You are the lead Career & Industry Assessment AI for CareerVerse.
@@ -971,7 +1346,7 @@ Output ONLY raw valid JSON array.`;
           } catch (e) {
             // cache quota safe
           }
-          return { questions: fullSet, isLiveAI: true, paradigms };
+          return { questions: getQuestionsWithShuffledOptions(fullSet), isLiveAI: true, paradigms };
         }
       }
     }
@@ -979,6 +1354,6 @@ Output ONLY raw valid JSON array.`;
     console.warn("Groq dynamic generation fallback to benchmark questions:", err);
   }
 
-  return { questions: [...COLLEGE_QUESTIONS], isLiveAI: false, paradigms };
+  return { questions: getQuestionsWithShuffledOptions(COLLEGE_QUESTIONS), isLiveAI: false, paradigms };
 }
 
