@@ -191,7 +191,7 @@ export const AssessmentPage: React.FC = () => {
       const sorted = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
       const evaluatedTopDomain = sorted[0]?.[0] || "";
 
-      if (stage === "college" || stage === "12th") {
+      if (stage === "college") {
         const input: StudentMLInput = {
           branch,
           avg_gpa: avgGpa,
@@ -283,25 +283,23 @@ export const AssessmentPage: React.FC = () => {
   }, [scores]);
 
   const recommendedRoleTitle = useMemo(() => {
-    if (stage === "10th") {
-      return ASSESSMENT_DOMAIN_TO_CAREER[topDomain] || topDomain || "Science (PCM) Stream";
+    if (topDomain) {
+      return topDomain;
     }
-    // If mlResult is present and reflects the assessment domain
-    if (mlResult?.recommended_career) {
-      return mlResult.recommended_career;
-    }
-    return ASSESSMENT_DOMAIN_TO_CAREER[topDomain] || topDomain || "Full-Stack Software Engineer (SDE)";
-  }, [stage, topDomain, mlResult]);
+    if (stage === "10th") return "Science PCM";
+    if (stage === "12th") return "Computer Science, AI & IT Engineering";
+    return "Full-Stack Software & Cloud/DevOps";
+  }, [stage, topDomain]);
 
   const nextStepSkills = useMemo(() => {
-    if (stage === "10th") {
-      return DOMAIN_SKILLS_MAP[topDomain] || DOMAIN_SKILLS_MAP["Science PCM"] || [];
+    if (DOMAIN_SKILLS_MAP[topDomain] && DOMAIN_SKILLS_MAP[topDomain].length > 0) {
+      return DOMAIN_SKILLS_MAP[topDomain];
     }
     if (mlResult?.missing_skills && mlResult.missing_skills.length > 0) {
       return mlResult.missing_skills;
     }
-    return DOMAIN_SKILLS_MAP[topDomain] || DOMAIN_SKILLS_MAP[recommendedRoleTitle] || [];
-  }, [stage, topDomain, mlResult, recommendedRoleTitle]);
+    return DOMAIN_SKILLS_MAP[recommendedRoleTitle] || ["Foundational Logic", "Analytical Reasoning", "Core Subject Mastery"];
+  }, [topDomain, mlResult, recommendedRoleTitle]);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16">
@@ -662,6 +660,11 @@ export const AssessmentPage: React.FC = () => {
                     <h2 className="text-3xl sm:text-4xl font-display font-bold text-white">
                       {recommendedRoleTitle}
                     </h2>
+                    {stage === "college" && mlResult?.recommended_career && mlResult.recommended_career !== recommendedRoleTitle && (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-data bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        <Sparkles size={12} /> Target Specialization: {mlResult.recommended_career}
+                      </div>
+                    )}
                     <p className="text-sm text-gray-300">
                       {stage === "10th" 
                         ? "Your logical reasoning and problem-solving patterns align most strongly with this senior secondary academic stream."

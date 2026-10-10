@@ -12,11 +12,15 @@ export const KeywordAnalysis: React.FC<KeywordAnalysisProps> = ({ data }) => {
 
   const { found = [], missing = [], matchPercentage = 0, foundCount = 0, totalChecked = 0 } = data;
 
-  const filteredFound = found.filter((k) =>
+  // Deduplicate keywords to prevent repeated items like SQL appearing twice
+  const uniqueFound = Array.from(new Map(found.map((k) => [k.keyword.toLowerCase(), k])).values());
+  const uniqueMissing = Array.from(new Map(missing.map((k) => [k.keyword.toLowerCase(), k])).values());
+
+  const filteredFound = uniqueFound.filter((k) =>
     k.keyword.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredMissing = missing.filter((k) =>
+  const filteredMissing = uniqueMissing.filter((k) =>
     k.keyword.toLowerCase().includes(searchQuery.toLowerCase())
   );
 

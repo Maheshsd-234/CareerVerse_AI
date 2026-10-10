@@ -36,7 +36,7 @@ TEMPLATES = {
     }
 }
 
-ATS_CORE_KEYWORDS = [
+ATS_CORE_KEYWORDS = list(dict.fromkeys([
     # Programming Languages
     'Python', 'Java', 'JavaScript', 'TypeScript', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'Ruby', 'Swift',
     'Kotlin', 'Scala', 'R', 'SQL',
@@ -55,16 +55,53 @@ ATS_CORE_KEYWORDS = [
     'Flask', 'REST API', 'GraphQL', 'HTML', 'CSS', 'Tailwind', 'Next.js',
     
     # Databases & Storage
-    'SQL', 'MongoDB', 'PostgreSQL', 'MySQL', 'Firebase', 'Firestore',
+    'MongoDB', 'PostgreSQL', 'MySQL', 'Firebase', 'Firestore',
     'Redis', 'Elasticsearch', 'DynamoDB', 'Cassandra',
     
     # Engineering Practices & Soft Skills
     'Agile', 'Scrum', 'Kanban', 'System Design', 'Code Review', 'Unit Testing',
     'Leadership', 'Communication', 'Problem Solving', 'Teamwork', 'Project Management'
-]
+]))
 
 HIGH_PRIORITY_KEYWORDS = [
     'Python', 'Machine Learning', 'AWS', 'Docker', 'React', 'SQL', 'FastAPI', 'Kubernetes', 'Git', 'CI/CD'
+]
+
+ATS_DOMAIN_KEYWORDS = {
+    'Full-Stack & Web Development': [
+        'React', 'Next.js', 'TypeScript', 'JavaScript', 'Node.js', 'HTML', 'CSS',
+        'Tailwind', 'REST API', 'GraphQL', 'FastAPI', 'Vue', 'Angular', 'SQL', 'PostgreSQL', 'MongoDB'
+    ],
+    'Backend & Cloud Engineering': [
+        'Python', 'Java', 'Go', 'Docker', 'Kubernetes', 'AWS', 'GCP', 'Azure',
+        'CI/CD', 'Microservices', 'Linux', 'Terraform', 'PostgreSQL', 'Redis', 'SQL', 'Git'
+    ],
+    'AI, Machine Learning & Data': [
+        'Machine Learning', 'Deep Learning', 'PyTorch', 'TensorFlow', 'Scikit-learn',
+        'Pandas', 'NumPy', 'NLP', 'Computer Vision', 'LLM', 'LangChain', 'Python', 'SQL'
+    ],
+    'DevOps & Infrastructure': [
+        'Docker', 'Kubernetes', 'Terraform', 'Ansible', 'Jenkins', 'CI/CD',
+        'AWS', 'Linux', 'Git', 'GitHub', 'Microservices'
+    ],
+    'Databases & Architecture': [
+        'SQL', 'PostgreSQL', 'MongoDB', 'Redis', 'Elasticsearch', 'System Design', 'REST API'
+    ]
+}
+
+UNIVERSAL_BEST_PRACTICES = [
+    'Git', 'CI/CD', 'Unit Testing', 'Code Review', 'System Design', 'Agile'
+]
+
+POWER_ACTION_VERBS = [
+    'architected', 'engineered', 'spearheaded', 'orchestrated', 'streamlined',
+    'implemented', 'optimized', 'accelerated', 'automated', 'deployed',
+    'designed', 'scaled', 'refactored', 'developed', 'delivered', 'boosted'
+]
+
+WEAK_PASSIVE_PHRASES = [
+    'worked on', 'helped with', 'responsible for', 'assisted with', 'handled',
+    'participated in', 'tasked with', 'duties included', 'attempted to'
 ]
 
 SCORING_WEIGHTS = {

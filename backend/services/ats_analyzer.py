@@ -12,7 +12,15 @@ from typing import Optional, Dict, Any, List
 import PyPDF2
 from docx import Document
 
-from backend.config.resume_config import ATS_CORE_KEYWORDS, HIGH_PRIORITY_KEYWORDS, SCORING_WEIGHTS
+from backend.config.resume_config import (
+    ATS_CORE_KEYWORDS,
+    HIGH_PRIORITY_KEYWORDS,
+    SCORING_WEIGHTS,
+    ATS_DOMAIN_KEYWORDS,
+    UNIVERSAL_BEST_PRACTICES,
+    POWER_ACTION_VERBS,
+    WEAK_PASSIVE_PHRASES
+)
 
 logger = logging.getLogger(__name__)
 
@@ -55,34 +63,39 @@ class ATSAnalyzer:
             # 2. Check formatting
             formatting_issues = await self._check_formatting(file_path)
 
-            # 3. Analyze keywords
-            keyword_analysis = self._analyze_keywords(resume_text)
+            # 3. Analyze keywords & primary domain relevance
+            keyword_analysis = self._analyze_keywords(resume_text, job_description)
 
             # 4. Check for metrics
             metrics_found = self._check_for_metrics(resume_text)
 
-            # 5. Simulate ATS parsing
+            # 5. Check action verbs, word count, and content quality
+            content_quality = self._analyze_content_quality(resume_text)
+
+            # 6. Simulate ATS parsing
             parsed_text = self._simulate_ats_parsing(resume_text)
 
-            # 6. Compare with Job Description
+            # 7. Compare with Job Description
             jd_comparison = None
             if job_description and job_description.strip():
                 jd_comparison = self._compare_with_jd(resume_text, job_description)
 
-            # 7. Calculate overall ATS scores
+            # 8. Calculate calibrated Enhancv-style ATS scores
             ats_score = self._calculate_ats_score(
                 formatting_issues,
                 keyword_analysis,
                 metrics_found,
-                jd_comparison
+                jd_comparison,
+                content_quality
             )
 
-            # 8. Actionable recommendations
+            # 9. Actionable recommendations
             recommendations = self._generate_recommendations(
                 formatting_issues,
                 keyword_analysis,
                 jd_comparison,
-                ats_score
+                ats_score,
+                content_quality
             )
 
             # Warnings check
@@ -138,8 +151,9 @@ class ATSAnalyzer:
         """Analyze resume directly from structured dictionary object (for live preview in builder)."""
         try:
             resume_text = self._resume_dict_to_text(resume)
-            keyword_analysis = self._analyze_keywords(resume_text)
+            keyword_analysis = self._analyze_keywords(resume_text, job_description)
             metrics_found = self._check_for_metrics(resume_text)
+            content_quality = self._analyze_content_quality(resume_text)
             parsed_text = self._simulate_ats_parsing(resume_text)
 
             formatting_issues = []
@@ -170,14 +184,16 @@ class ATSAnalyzer:
                 formatting_issues,
                 keyword_analysis,
                 metrics_found,
-                jd_comparison
+                jd_comparison,
+                content_quality
             )
 
             recommendations = self._generate_recommendations(
                 formatting_issues,
                 keyword_analysis,
                 jd_comparison,
-                ats_score
+                ats_score,
+                content_quality
             )
 
             return {
@@ -340,15 +356,15 @@ class ATSAnalyzer:
 
         return issues
 
-    def _analyze_keywords(self, resume_text: str) -> Dict[str, Any]:
-        """Scan resume text against standard ATS keywords bank and identify missing essentials."""
+    def _analyze_keywords(self, resume_text: str, job_description: Optional[str] = None) -> Dict[str, Any]:
+        """Scan resume text against standard ATS keywords bank and identify domain-relevant missing essentials."""
         found = []
-        missing = []
         text_lower = resume_text.lower()
 
-        for kw in self.ats_keywords:
+        # Deduplicate keyword check
+        checked_kws = list(dict.fromkeys(self.ats_keywords))
+        for kw in checked_kws:
             kw_clean = kw.lower()
-            # Use regex word boundary where appropriate
             pattern = r'\b' + re.escape(kw_clean) + r'\b'
             matches = list(re.finditer(pattern, text_lower))
             if matches:
@@ -358,23 +374,67 @@ class ATSAnalyzer:
                     'found': True,
                     'locations': [m.start() for m in matches[:5]]
                 })
-            else:
-                priority = 'high' if kw in self.high_priority_keywords else 'medium'
-                missing.append({
+
+        found_names_lower = {k['keyword'].lower() for k in found}
+        found_count = len(found)
+
+        # 1. Detect candidate's primary domain from ATS_DOMAIN_KEYWORDS
+        domain_scores: Dict[str, int] = {}
+        for dom, dom_kws in ATS_DOMAIN_KEYWORDS.items():
+            matched = sum(1 for dk in dom_kws if dk.lower() in found_names_lower)
+            domain_scores[dom] = matched
+
+        sorted_domains = sorted(domain_scores.items(), key=lambda x: x[1], reverse=True)
+        primary_domain = sorted_domains[0][0] if sorted_domains and sorted_domains[0][1] > 0 else 'Full-Stack & Web Development'
+        secondary_domain = sorted_domains[1][0] if len(sorted_domains) > 1 and sorted_domains[1][1] > 0 else None
+
+        # 2. Collect candidates for recommended additions
+        # Relevant keywords: from primary domain + secondary domain + best practices + high priority keywords
+        relevant_pool = list(ATS_DOMAIN_KEYWORDS.get(primary_domain, []))
+        if secondary_domain:
+            relevant_pool.extend(ATS_DOMAIN_KEYWORDS.get(secondary_domain, []))
+        relevant_pool.extend(UNIVERSAL_BEST_PRACTICES)
+        relevant_pool.extend(self.high_priority_keywords)
+
+        jd_skills = []
+        if job_description:
+            jd_skills = self._extract_skills_from_text(job_description)
+            relevant_pool = jd_skills + relevant_pool
+
+        # Deduplicate relevant pool
+        relevant_pool = list(dict.fromkeys(relevant_pool))
+
+        # 3. Build missing list: ONLY prioritize skills that actually match candidate's domain or JD
+        missing_candidates = []
+        seen_missing = set()
+
+        for kw in relevant_pool:
+            kw_lower = kw.lower()
+            if kw_lower not in found_names_lower and kw_lower not in seen_missing:
+                seen_missing.add(kw_lower)
+                is_high = (kw in jd_skills) or (kw in self.high_priority_keywords)
+                missing_candidates.append({
                     'keyword': kw,
-                    'priority': priority
+                    'priority': 'high' if is_high else 'medium'
                 })
 
-        found_count = len(found)
-        total = len(self.ats_keywords)
-        pct = round((found_count / total * 100), 1) if total else 0.0
+        # Sort so 'high' priority appears first, then cap to top 8 most impactful additions
+        missing_candidates.sort(key=lambda x: 0 if x['priority'] == 'high' else 1)
+        targeted_missing = missing_candidates[:8] if len(missing_candidates) > 8 else missing_candidates
+
+        # Match % against the relevant domain skills (not all 70 irrelevant keywords!)
+        domain_kws = ATS_DOMAIN_KEYWORDS.get(primary_domain, [])
+        domain_total = max(len(domain_kws), 10)
+        domain_matches = sum(1 for dk in domain_kws if dk.lower() in found_names_lower)
+        pct = round(min(100.0, (domain_matches / domain_total) * 100), 1)
 
         return {
             'found': found,
-            'missing': missing,
+            'missing': targeted_missing,
             'foundCount': found_count,
-            'totalChecked': total,
-            'matchPercentage': pct
+            'totalChecked': len(checked_kws),
+            'matchPercentage': pct,
+            'detectedDomain': primary_domain
         }
 
     def _check_for_metrics(self, resume_text: str) -> Dict[str, Any]:
@@ -459,38 +519,124 @@ class ATSAnalyzer:
                 skills_found.append(kw)
         return list(dict.fromkeys(skills_found))
 
+    def _analyze_content_quality(self, resume_text: str) -> Dict[str, Any]:
+        """Analyze action verbs, passive voice, word count, and contact completeness."""
+        text_lower = resume_text.lower()
+        words = re.findall(r'\b[a-zA-Z0-9_\-\']+\b', resume_text)
+        word_count = len(words)
+
+        # Power Action Verbs
+        power_verbs_found = [v for v in POWER_ACTION_VERBS if re.search(r'\b' + re.escape(v) + r'\b', text_lower)]
+
+        # Weak / Passive phrases
+        weak_phrases_found = [p for p in WEAK_PASSIVE_PHRASES if p in text_lower]
+
+        # Contact info detection
+        has_email = bool(re.search(r'[\w\.-]+@[\w\.-]+\.\w+', resume_text))
+        has_phone = bool(re.search(r'(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', resume_text))
+        has_links = bool(re.search(r'(linkedin\.com|github\.com)', text_lower))
+
+        # Essential Sections detection
+        sections_found = {
+            'experience': bool(re.search(r'\b(experience|employment|work history|professional background)\b', text_lower)),
+            'education': bool(re.search(r'\b(education|academic|university|degree|b\.tech|bachelor)\b', text_lower)),
+            'skills': bool(re.search(r'\b(skills|technical skills|technologies|proficiencies)\b', text_lower)),
+            'projects': bool(re.search(r'\b(projects|personal projects|key projects|academic projects)\b', text_lower))
+        }
+
+        return {
+            'wordCount': word_count,
+            'powerVerbsFound': power_verbs_found,
+            'weakPhrasesFound': weak_phrases_found,
+            'hasEmail': has_email,
+            'hasPhone': has_phone,
+            'hasLinks': has_links,
+            'sectionsFound': sections_found
+        }
+
     def _calculate_ats_score(
         self,
         formatting_issues: List[dict],
         keywords: dict,
         metrics: dict,
-        jd_comp: Optional[dict]
+        jd_comp: Optional[dict] = None,
+        content_quality: Optional[dict] = None
     ) -> Dict[str, float]:
-        """Synthesize overall and multi-dimensional ATS readiness scores."""
+        """Synthesize overall and multi-dimensional ATS readiness scores calibrated to top industry tools (Enhancv, Jobscan)."""
         scores: Dict[str, float] = {}
 
-        # Formatting score
+        # 1. Formatting score
         errors = sum(1 for i in formatting_issues if i.get('severity') == 'error')
         warnings = sum(1 for i in formatting_issues if i.get('severity') == 'warning')
-        scores['formatting'] = max(20.0, float(100 - (errors * 25) - (warnings * 8)))
+        fmt_base = 95.0 - (errors * 25.0) - (warnings * 8.0)
 
-        # Keywords score (scale relative to target 20% coverage of whole universe)
+        if content_quality:
+            if not content_quality.get('hasEmail', True):
+                fmt_base -= 8.0
+            if not content_quality.get('hasPhone', True):
+                fmt_base -= 5.0
+            sections = content_quality.get('sectionsFound', {})
+            missing_secs = sum(1 for k, found in sections.items() if not found)
+            fmt_base -= (missing_secs * 3.0)
+
+        scores['formatting'] = max(25.0, min(100.0, fmt_base))
+
+        # 2. Keywords score
         raw_pct = keywords.get('matchPercentage', 0.0)
-        # 30% of total keyword pool is an exceptional tech resume
-        keyword_score = min(100.0, (raw_pct / 25.0) * 100.0) if raw_pct > 0 else 30.0
-        scores['keywords'] = round(keyword_score, 1)
+        found_cnt = keywords.get('foundCount', 0)
+        if raw_pct > 0:
+            kw_score = min(96.0, max(40.0, 50.0 + (raw_pct * 0.45)))
+        elif found_cnt > 0:
+            kw_score = min(90.0, 45.0 + (found_cnt * 6.0))
+        else:
+            kw_score = 30.0
+        scores['keywords'] = round(kw_score, 1)
 
-        # Readability heuristic
-        scores['readability'] = 88.0
+        # 3. Readability & Brevity
+        read_base = 80.0
+        if content_quality:
+            wc = content_quality.get('wordCount', 500)
+            if wc < 250:
+                read_base -= 15.0
+            elif wc > 1200:
+                read_base -= 10.0
+            elif 400 <= wc <= 850:
+                read_base += 4.0
 
-        # Metrics score
+            p_verbs = len(content_quality.get('powerVerbsFound', []))
+            w_phrases = len(content_quality.get('weakPhrasesFound', []))
+
+            if p_verbs >= 3:
+                read_base += min(6.0, p_verbs * 1.5)
+            elif p_verbs == 0:
+                read_base -= 6.0
+
+            read_base -= min(12.0, w_phrases * 4.0)
+
+        scores['readability'] = round(max(35.0, min(95.0, read_base)), 1)
+
+        # 4. Metrics & Quantified Impact score (Calibrated to Enhancv benchmarks)
         found_m = metrics.get('metricsFound', 0)
-        scores['metrics'] = min(100.0, 50.0 + (found_m * 12.5))
+        if found_m == 0:
+            m_score = 40.0
+        elif found_m <= 2:
+            m_score = 58.0 + (found_m * 4.0)
+        elif found_m <= 4:
+            m_score = 70.0 + ((found_m - 2) * 5.0)
+        elif found_m <= 6:
+            m_score = 80.0 + ((found_m - 4) * 4.0)
+        else:
+            m_score = min(96.0, 88.0 + ((found_m - 6) * 2.0))
 
-        # Parsing fidelity
-        scores['parsing'] = 92.0
+        scores['metrics'] = round(m_score, 1)
 
-        # Overall composite
+        # 5. Parsing fidelity
+        parse_base = 92.0
+        if errors > 0:
+            parse_base -= (errors * 15.0)
+        scores['parsing'] = round(max(40.0, parse_base), 1)
+
+        # 6. Overall Composite
         if jd_comp and 'matchPercentage' in jd_comp:
             w = SCORING_WEIGHTS['with_jd']
             overall = (
@@ -509,7 +655,7 @@ class ATSAnalyzer:
                 scores['metrics'] * w['metrics']
             )
 
-        scores['overall'] = round(min(100.0, max(10.0, overall)), 1)
+        scores['overall'] = round(min(100.0, max(15.0, overall)), 1)
         return scores
 
     def _generate_recommendations(
@@ -517,9 +663,10 @@ class ATSAnalyzer:
         formatting_issues: List[dict],
         keywords: dict,
         jd_comp: Optional[dict],
-        ats_score: Dict[str, float]
+        ats_score: Dict[str, float],
+        content_quality: Optional[dict] = None
     ) -> Dict[str, List[dict]]:
-        """Synthesize structured time-prioritized recommendations."""
+        """Synthesize structured, prioritized recommendations aligned with Enhancv & Jobscan criteria."""
         immediate = []
         short_term = []
         long_term = []
@@ -541,8 +688,22 @@ class ATSAnalyzer:
                 'impact': 'high'
             })
 
-        # Metrics
-        if ats_score.get('metrics', 0) < 70:
+        # Weak Verbs / Action Verbs
+        if content_quality:
+            weak_phrases = content_quality.get('weakPhrasesFound', [])
+            if weak_phrases:
+                immediate.append({
+                    'action': f"Replace passive phrases like '{weak_phrases[0]}' with strong power action verbs (e.g., 'Architected', 'Spearheaded', 'Optimized').",
+                    'impact': 'high'
+                })
+            elif len(content_quality.get('powerVerbsFound', [])) < 3:
+                short_term.append({
+                    'action': "Begin every experience bullet point with an impactful action verb (e.g., 'Engineered', 'Orchestrated', 'Automated').",
+                    'impact': 'medium'
+                })
+
+        # Metrics & Impact
+        if ats_score.get('metrics', 0) < 75:
             short_term.append({
                 'action': 'Add quantifiable metrics (e.g., percentages, latencies reduced, user volume) to at least 3 bullet points.',
                 'impact': 'high'
