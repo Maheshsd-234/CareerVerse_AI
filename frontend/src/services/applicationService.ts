@@ -640,19 +640,17 @@ export const applicationService = {
       console.warn("Backend API application read error:", apiErr);
     }
 
-    // 4. If empty or first time:
-    const isConnected = this.isGmailConnected(uid);
-    if (!localData || localData.length === 0) {
-      if (isConnected) {
-        return [];
-      }
-      localData = DEFAULT_30_APPLICATIONS;
-      localStorage.setItem(getStorageKey(uid), JSON.stringify(localData));
-      // Asynchronously mirror to Firestore if available
-      this.mirrorToFirestore(uid, localData);
-    }
+    // 4. Return local cached data, or empty array if none exist
+    return localData || [];
+  },
 
-    return localData;
+  /**
+   * Explicitly load demo benchmark applications only when requested by user for sandbox exploration
+   */
+  async loadDemoBenchmarkApplications(uid: string): Promise<JobApplication[]> {
+    localStorage.setItem(getStorageKey(uid), JSON.stringify(DEFAULT_30_APPLICATIONS));
+    this.mirrorToFirestore(uid, DEFAULT_30_APPLICATIONS);
+    return DEFAULT_30_APPLICATIONS;
   },
 
   /**
@@ -759,7 +757,7 @@ export const applicationService = {
           user_id: uid,
           access_token: accessToken || null,
           user_email: userEmail || null,
-          mock_demo: !accessToken,
+          mock_demo: false,
         }),
       });
 

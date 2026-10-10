@@ -548,7 +548,7 @@ export const DashboardPage: React.FC = () => {
             { label: "AI Counselor", desc: "24/7 AI Guidance", icon: Zap, path: "/chatbot" },
             { label: "Live Jobs", desc: "Active Openings & Trends", icon: Briefcase, path: "/live-jobs" },
             { label: "Resume Builder", desc: "ATS & PDF Export", icon: FileText, path: "/resume-builder" },
-            { label: "App Tracker", desc: "Gmail Sync & Funnel", icon: ListChecks, path: "/application-tracker" },
+            { label: "Job Tracker", desc: "Gmail Sync & Funnel", icon: ListChecks, path: "/application-tracker" },
           ].map((action) => {
             const Icon = action.icon;
             return (

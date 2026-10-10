@@ -30,7 +30,7 @@ class SyncEmailRequest(BaseModel):
     refresh_token: Optional[str] = Field(None, description="Google OAuth refresh token (optional)")
     user_email: Optional[str] = Field(None, description="Connected Google email address")
     provider: Optional[str] = Field("gmail", description="Email provider")
-    mock_demo: Optional[bool] = Field(True, description="Sync sample applications if no token")
+    mock_demo: Optional[bool] = Field(False, description="Sync sample applications only if explicitly requested")
 
 
 class UpdateApplicationRequest(BaseModel):
@@ -58,7 +58,7 @@ class CreateApplicationRequest(BaseModel):
 @router.post("/sync-email")
 def sync_email_applications(req: SyncEmailRequest):
     """
-    Syncs candidate inbox from Gmail API or loads curated 30-application demo suite.
+    Syncs candidate inbox from Gmail API or loads curated demo suite if explicitly requested.
     Extracts Company, Role, Status, Interview Date & Platform.
     """
     try:
@@ -67,7 +67,7 @@ def sync_email_applications(req: SyncEmailRequest):
             access_token=req.access_token,
             refresh_token=req.refresh_token,
             user_email=req.user_email,
-            mock_demo=req.mock_demo if req.access_token is None else False
+            mock_demo=bool(req.mock_demo)
         )
         return {
             "status": "success",

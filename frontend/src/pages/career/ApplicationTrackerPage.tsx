@@ -123,7 +123,7 @@ export const ApplicationTrackerPage: React.FC = () => {
       } catch (err) {
         console.error("Failed to load applications:", err);
         if (alive) {
-          setApplications(DEFAULT_30_APPLICATIONS);
+          setApplications([]);
         }
       } finally {
         if (alive) setLoading(false);
@@ -402,7 +402,7 @@ export const ApplicationTrackerPage: React.FC = () => {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs font-data font-bold tracking-wider uppercase text-[#F5A623]">
               <Sparkles size={13} className="text-[#F5A623]" />
-              STATION 10 • APPLICATION TRACKER
+              STATION 10 • JOB TRACKER
             </div>
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-display font-extrabold tracking-tight">
               Unified Automated Hiring Radar
@@ -1081,12 +1081,37 @@ export const ApplicationTrackerPage: React.FC = () => {
               </p>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              {!isGmailConnected ? (
+                <button
+                  onClick={() => setShowConnectModal(true)}
+                  className="px-4 py-2.5 bg-[#4F46E5] text-white rounded-xl text-xs font-bold font-display shadow-md hover:bg-[#4338CA] transition-colors flex items-center gap-1.5"
+                >
+                  <Mail size={14} />
+                  Connect Gmail (Auto-Sync)
+                </button>
+              ) : (
+                <button
+                  onClick={handleConnectGoogleOAuth}
+                  disabled={syncing}
+                  className="px-4 py-2.5 bg-[#4F46E5] text-white rounded-xl text-xs font-bold font-display shadow-md hover:bg-[#4338CA] transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <RefreshCw size={14} className={syncing ? "animate-spin" : ""} />
+                  {syncing ? "Scanning Gmail..." : "Scan Gmail Inbox Now"}
+                </button>
+              )}
               <button
                 onClick={() => setShowPasteModal(true)}
-                className="px-4 py-2.5 bg-[#4F46E5] text-white rounded-xl text-xs font-bold font-display shadow-md hover:bg-[#4338CA] transition-colors flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-white border border-gray-200 text-[#12122B] rounded-xl text-xs font-semibold hover:bg-gray-100 transition-colors shadow-xs flex items-center gap-1.5"
               >
                 <Mail size={14} />
-                Paste &amp; Parse an Email Now
+                Paste &amp; Parse an Email
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2.5 bg-white border border-gray-200 text-[#12122B] rounded-xl text-xs font-semibold hover:bg-gray-100 transition-colors shadow-xs flex items-center gap-1.5"
+              >
+                <Plus size={14} />
+                + Add Manually
               </button>
               <button
                 onClick={() => {
@@ -1094,9 +1119,9 @@ export const ApplicationTrackerPage: React.FC = () => {
                   localStorage.setItem(`careerverse_applications_${uid}`, JSON.stringify(DEFAULT_30_APPLICATIONS));
                   setSyncSuccessToast("Loaded 30 benchmark applications for exploration.");
                 }}
-                className="px-4 py-2.5 bg-white border border-gray-200 text-[#12122B] rounded-xl text-xs font-semibold hover:bg-gray-100 transition-colors shadow-xs"
+                className="px-4 py-2.5 bg-gray-100 border border-gray-200 text-[#6B7280] rounded-xl text-xs font-medium hover:bg-gray-200 hover:text-gray-900 transition-colors shadow-xs"
               >
-                Explore 30 Sample Benchmarks (Demo)
+                Explore 30 Demo Benchmarks
               </button>
             </div>
           </div>
