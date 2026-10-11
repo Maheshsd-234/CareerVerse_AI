@@ -17,8 +17,6 @@ export interface Role {
   salaryRange: string;
   trendScore: number;
   description: string;
-  fresherFriendly?: boolean;
-  targetLevel?: "Fresher / Entry" | "Mid-Level" | "Senior / Lead";
 }
 
 export interface CareerPath {
@@ -62,11 +60,21 @@ export interface AssessmentResult {
   createdAt: Date | unknown;
 }
 
+export interface ChatSource {
+  index: number;
+  title: string;
+  category: string;
+  last_verified: string;
+  url: string | null;
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  sources?: ChatSource[] | null;
+  mode?: string | null;
 }
 
 export interface ChatSession {

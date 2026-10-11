@@ -1,0 +1,142 @@
+[
+  {
+    "id": "role-ai-engineer",
+    "source": "role:ai-engineer",
+    "text": "AI Engineer: Design and develop AI systems that learn and adapt to solve complex problems. Required skills: Python, Machine Learning, Deep Learning, TensorFlow, Data Analysis. Salary range in India: ₹8L - ₹25L per annum. Trend score: 9.8/10. Category: Tech."
+  },
+  {
+    "id": "role-ml-engineer",
+    "source": "role:ml-engineer",
+    "text": "ML Engineer: Build, deploy, and maintain machine learning models in real-world production systems. Required skills: Python, Machine Learning, Statistics, Model Deployment, MLOps Basics. Salary range: ₹7L - ₹28L. Trend score: 9.3/10."
+  },
+  {
+    "id": "role-fullstack-dev",
+    "source": "role:fullstack-dev",
+    "text": "Full Stack Developer: Build end-to-end web applications using modern frameworks and best practices. Required skills: React, Node.js, TypeScript, Database Design, REST APIs. Salary range: ₹6L - ₹20L. Trend score: 9.5/10."
+  },
+  {
+    "id": "role-data-analyst",
+    "source": "role:data-analyst",
+    "text": "Data Analyst: Analyse data to find patterns, create dashboards, and support business decision-making. Required skills: SQL, Excel, Data Visualization, Statistics, Business Understanding. Salary range: ₹4L - ₹16L."
+  },
+  {
+    "id": "role-data-scientist",
+    "source": "role:data-scientist",
+    "text": "Data Scientist: Extract insights from data using statistical and machine learning techniques. Required skills: Python, SQL, Statistics, Data Visualization, Machine Learning. Salary range: ₹7L - ₹22L."
+  },
+  {
+    "id": "role-cybersecurity",
+    "source": "role:cybersecurity-analyst",
+    "text": "Cybersecurity Analyst: Protect digital infrastructure by monitoring threats, responding to incidents, and hardening systems. Required skills: Network Security, SIEM, Ethical Hacking, Linux, Penetration Testing. Salary range: ₹5L - ₹20L."
+  },
+  {
+    "id": "role-cloud-architect",
+    "source": "role:cloud-architect",
+    "text": "Cloud Architect: Design and manage scalable cloud infrastructure across AWS, Azure, or GCP. Required skills: AWS/Azure/GCP, Terraform, Kubernetes, Networking, Cost Optimisation. Salary range: ₹15L - ₹45L."
+  },
+  {
+    "id": "role-product-manager",
+    "source": "role:product-manager",
+    "text": "Product Manager: Define product vision, roadmap, and work with engineering + design to ship features. Required skills: Product Thinking, User Research, Agile, Data Analysis, Communication. Salary range: ₹12L - ₹40L."
+  },
+  {
+    "id": "role-ux-designer",
+    "source": "role:ux-designer",
+    "text": "UX Designer: Create intuitive user experiences through research, wireframes, and prototypes. Required skills: Figma, User Research, Wireframing, Prototyping, Design Systems. Salary range: ₹5L - ₹22L."
+  },
+  {
+    "id": "role-devops-engineer",
+    "source": "role:devops-engineer",
+    "text": "DevOps Engineer: Bridge development and operations by automating build, test, and deployment pipelines. Required skills: Docker, Kubernetes, CI/CD, Linux, Monitoring. Salary range: ₹8L - ₹28L."
+  },
+  {
+    "id": "path-after-10th-pu",
+    "source": "path:after-10th",
+    "text": "After 10th — PU Streams in India: Science (PCM or PCB), Commerce, and Arts/Humanities. PCM leads to Engineering (JEE) and pure sciences. PCB leads to Medical (NEET) and biology careers. Commerce with Maths leads to CA, Finance, Economics. Arts leads to UPSC, Law, Journalism, Social Sciences."
+  },
+  {
+    "id": "path-after-10th-diploma",
+    "source": "path:after-10th-diploma",
+    "text": "After 10th — Polytechnic Diploma (3 years): Lateral entry to B.Tech in 2nd year. Available in Mechanical, Civil, Electrical, Computer Science, Electronics branches. Government and private polytechnic colleges across India. Good for hands-on technical careers without spending 4 years in engineering."
+  },
+  {
+    "id": "path-after-12th-engineering",
+    "source": "path:after-12th-engineering",
+    "text": "After 12th Science (PCM) — Engineering: JEE Main and JEE Advanced for IITs/NITs/IIITs. State-level exams: KCET, MHT-CET, WBJEE, AP-EAMCET, TS-EAMCET. Top B.Tech branches: Computer Science, AI & ML, Electronics, Mechanical, Civil. Duration: 4 years. Salary range after graduation: ₹3.5L - ₹12L for average colleges, ₹12L - ₹50L+ for IITs."
+  },
+  {
+    "id": "path-after-12th-medical",
+    "source": "path:after-12th-medical",
+    "text": "After 12th Science (PCB) — Medical: NEET-UG for MBBS, BDS, BAMS, BHMS. MBBS: 5.5 years (including internship). AIIMS and JIPMER for top medical colleges. BDS: 5 years, good alternative to MBBS. BAMS/BHMS: Ayurveda and Homeopathy. Paramedical options: Physiotherapy, Nursing, Medical Lab Technology."
+  },
+  {
+    "id": "path-after-12th-commerce",
+    "source": "path:after-12th-commerce",
+    "text": "After 12th Commerce — Career Options: B.Com, BBA, B.Com (Hons). CA (Chartered Accountancy) via ICAI — highly prestigious and well-paid (₹7L - ₹30L). CMA (Cost & Management Accountant). CS (Company Secretary). MBA after graduation for management roles. Banking exams: IBPS, SBI PO, RBI Grade B."
+  },
+  {
+    "id": "path-after-12th-computing",
+    "source": "path:after-12th-computing",
+    "text": "After 12th — Computing & IT: BCA (3 years) — entry to software industry. B.Sc Computer Science. BCA with MCA gives good industry placement. Top skills to learn: Python, Java, Web Development, Cloud. Placement salary range: ₹3L - ₹8L for average colleges, higher for top institutions."
+  },
+  {
+    "id": "path-masters-engineering",
+    "source": "path:masters-engineering",
+    "text": "Masters in Engineering — M.Tech/ME: GATE exam for admission to IITs, NITs, IISc. Specialisations: AI/ML, VLSI, Structural Engineering, Power Systems, Computer Science. IIT M.Tech stipend: ₹12,400/month (GATE qualified). Good for R&D and higher academic roles. Salary post M.Tech from IITs: ₹12L - ₹45L."
+  },
+  {
+    "id": "path-masters-management",
+    "source": "path:masters-management",
+    "text": "Masters in Management — MBA: CAT for IIMs. XAT for XLRI. SNAP, NMAT, MAT for other top B-schools. IIM average package: ₹25L - ₹35L. Specialisations: Finance, Marketing, Operations, HR, Strategy, Consulting. 2-year program. PGDM from top institutes is equivalent to MBA."
+  },
+  {
+    "id": "path-upsc-civil-services",
+    "source": "path:government-civil-services",
+    "text": "UPSC Civil Services (IAS/IPS/IFS): Prelims → Mains → Interview. Eligibility: Any graduation. Age limit 21-32 (6 attempts for General). 3 stages, 1+ year preparation typically. Coaching options: Delhi coaching hubs, online platforms. Starting salary: ₹56,100/month + allowances. Prestigious career in public administration."
+  },
+  {
+    "id": "path-gate-psu",
+    "source": "path:gate-psu",
+    "text": "GATE for PSU Jobs: BHEL, ONGC, NTPC, IOCL, GAIL recruit through GATE scores. No separate exam needed. Starting CTC: ₹8L - ₹12L + benefits. Job security and work-life balance. Branches: Mechanical, Electrical, Civil, Electronics, Chemical, Computer Science."
+  },
+  {
+    "id": "skill-python",
+    "source": "skill:python",
+    "text": "Python: Versatile programming language essential for AI, data science, web backends, and automation. Difficulty: Beginner-friendly. Key libraries: NumPy, Pandas, Scikit-learn, FastAPI, Django. Free learning: Python.org, Kaggle, freeCodeCamp. Jobs using Python: Data Scientist, ML Engineer, Backend Developer, Automation Engineer."
+  },
+  {
+    "id": "skill-javascript",
+    "source": "skill:javascript",
+    "text": "JavaScript: Essential for web development — runs in browsers and on servers (Node.js). Difficulty: Beginner. Learn: React for frontend, Node.js for backend, TypeScript for typed JS. Most in-demand frontend skill in 2025-26. Used by nearly every software company globally."
+  },
+  {
+    "id": "skill-machine-learning",
+    "source": "skill:machine-learning",
+    "text": "Machine Learning: Build intelligent systems that learn from data. Difficulty: Advanced. Prerequisites: Python, Linear Algebra, Statistics, Probability. Key concepts: Supervised/Unsupervised Learning, Neural Networks, Model Evaluation. Tools: Scikit-learn, TensorFlow, PyTorch. Career paths: ML Engineer, Data Scientist, AI Researcher."
+  },
+  {
+    "id": "skill-cloud",
+    "source": "skill:cloud-computing",
+    "text": "Cloud Computing: Deploy and manage applications on AWS, Azure, or GCP. Difficulty: Intermediate. Key certifications: AWS Solutions Architect, GCP Professional, Azure Administrator. Tools: Terraform, Docker, Kubernetes. High demand skill — cloud roles in India pay ₹8L - ₹40L. Companies: TCS, Infosys, Wipro, Amazon, Google, Microsoft India."
+  },
+  {
+    "id": "skill-sql",
+    "source": "skill:sql",
+    "text": "SQL: Query and manage relational databases — a must-have skill for any data role. Difficulty: Beginner. Learn: MySQL, PostgreSQL, SQLite. Used in: Data Analysis, Backend Development, Business Intelligence. Free resources: Mode Analytics, SQLZoo, W3Schools. Essential for Data Analyst, Backend Developer, Business Analyst roles."
+  },
+  {
+    "id": "trending-ai-2026",
+    "source": "trending:2026",
+    "text": "Top trending career skills and roles in India for 2026: (1) Generative AI / Prompt Engineering — every company hiring. (2) Cloud + DevOps — AWS and Azure certifications boost salary 30-50%. (3) Data Science — BFSI, healthcare, e-commerce sectors. (4) Cybersecurity — government mandates driving demand. (5) Full Stack with TypeScript — consistent high demand. (6) Product Management — startups and Big Tech both hiring PMs heavily."
+  },
+  {
+    "id": "salary-benchmarks-india",
+    "source": "reference:salary-india-2026",
+    "text": "Indian IT salary benchmarks 2026: Fresher software engineer: ₹3.5L - ₹8L. Mid-level (3-5 yrs): ₹10L - ₹22L. Senior/Lead (7+ yrs): ₹22L - ₹50L. IIT/NIT fresher: ₹12L - ₹50L. Data Scientist fresher: ₹6L - ₹12L. Product Manager (3 yrs): ₹18L - ₹35L. FAANG India: ₹40L - ₹1.5Cr+. Startup equity + cash can exceed corporate packages. CA fresher: ₹7L - ₹12L."
+  },
+  {
+    "id": "exams-india-overview",
+    "source": "reference:entrance-exams",
+    "text": "Key Indian entrance exams: JEE Main/Advanced (Engineering), NEET UG (Medical), CUET UG (Central Universities undergraduate), CAT (MBA/IIMs), GATE (M.Tech/PSU jobs), UPSC CSE (Civil Services), CLAT (Law), NDA (Defence), IBPS/SBI (Banking). Most exams have age limits and attempt limits — plan early. Coaching not mandatory but can help for competitive exams."
+  }
+]

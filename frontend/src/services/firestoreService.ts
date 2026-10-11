@@ -8,7 +8,7 @@ import {
   query,
   getDocs,
 } from "firebase/firestore";
-import type { User, AssessmentResult, ChatMessage, ChatSession } from "../types";
+import type { User, AssessmentResult, ChatMessage, ChatSession, ChatSource } from "../types";
 
 const chatHistoryLocalKey = (uid: string) => `cv_chat_history_${uid}`;
 
@@ -88,6 +88,8 @@ const serializeChatMessages = (messages: ChatMessage[]) =>
         : typeof (message.timestamp as { toDate?: () => Date })?.toDate === "function"
           ? (message.timestamp as { toDate: () => Date }).toDate().toISOString()
           : String(message.timestamp ?? new Date().toISOString()),
+    sources: message.sources && Array.isArray(message.sources) ? message.sources : null,
+    mode: typeof message.mode === "string" ? message.mode : null,
   }));
 
 const parseChatMessages = (raw: unknown[]): ChatMessage[] =>
@@ -98,6 +100,8 @@ const parseChatMessages = (raw: unknown[]): ChatMessage[] =>
       role: message.role as ChatMessage["role"],
       content: String(message.content ?? ""),
       timestamp: new Date(String(message.timestamp ?? Date.now())),
+      sources: Array.isArray(message.sources) ? (message.sources as ChatSource[]) : null,
+      mode: typeof message.mode === "string" ? (message.mode as string) : null,
     };
   });
 
